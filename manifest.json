@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "AI-Shield",
   "version": "1.0.0",
-  "description": "Proteção de dados pessoais (PII) para ChatGPT, Claude e Gemini - Compliance GDPR, EU AI Act, CCPA",
+  "description": "Data protection for AI platforms - GDPR, EU AI Act, CCPA compliance",
   "permissions": [
     "storage",
     "activeTab"
@@ -11,11 +11,18 @@
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",
     "https://claude.ai/*",
-    "https://gemini.google.com/*"
+    "https://console.anthropic.com/*",
+    "https://gemini.google.com/*",
+    "https://copilot.microsoft.com/*",
+    "https://perplexity.ai/*",
+    "https://chat.mistral.ai/*",
+    "https://llama.meta.com/*",
+    "https://huggingface.co/chat/*",
+    "https://console.groq.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "AI-Shield - Proteção de Dados"
+    "default_title": "AI-Shield - Data Protection"
   },
   "content_scripts": [
     {
@@ -23,7 +30,14 @@
         "https://chatgpt.com/*",
         "https://chat.openai.com/*",
         "https://claude.ai/*",
-        "https://gemini.google.com/*"
+        "https://console.anthropic.com/*",
+        "https://gemini.google.com/*",
+        "https://copilot.microsoft.com/*",
+        "https://perplexity.ai/*",
+        "https://chat.mistral.ai/*",
+        "https://llama.meta.com/*",
+        "https://huggingface.co/chat/*",
+        "https://console.groq.com/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
