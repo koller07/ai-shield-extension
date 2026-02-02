@@ -4,136 +4,233 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI-Shield</title>
-  <link rel="stylesheet" href="styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      width: 350px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: #f8f9fa;
+      color: #333;
+    }
+    
+    .container {
+      padding: 20px;
+    }
+    
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+    
+    .logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    
+    .header h1 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1e40af;
+    }
+    
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      background-color: #e8f5e9;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      font-size: 13px;
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #10b981;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .stat-card {
+      background-color: white;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #e0e0e0;
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 20px;
+      font-weight: bold;
+      color: #1e40af;
+    }
+    
+    .stat-label {
+      font-size: 11px;
+      color: #666;
+      margin-top: 4px;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    
+    button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background-color: #1e40af;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: #1e3a8a;
+    }
+    
+    .btn-secondary {
+      background-color: #e0e0e0;
+      color: #333;
+    }
+    
+    .btn-secondary:hover {
+      background-color: #d0d0d0;
+    }
+    
+    .toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      background-color: white;
+      border-radius: 6px;
+      border: 1px solid #e0e0e0;
+      font-size: 13px;
+    }
+    
+    .toggle-switch {
+      width: 40px;
+      height: 24px;
+      background-color: #10b981;
+      border-radius: 12px;
+      position: relative;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .toggle-switch.off {
+      background-color: #ccc;
+    }
+    
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background-color: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: left 0.2s;
+    }
+    
+    .toggle-switch.off::after {
+      left: 18px;
+    }
+    
+    .footer {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #e0e0e0;
+      text-align: center;
+      font-size: 11px;
+      color: #999;
+    }
+    
+    .footer a {
+      color: #1e40af;
+      text-decoration: none;
+    }
+  </style>
 </head>
 <body>
-  <div class="popup-container">
-    <header class="popup-header">
-      <div class="popup-title">
-        <span class="popup-icon">🛡️</span>
-        <h1>AI-Shield</h1>
+  <div class="container">
+    <div class="header">
+      <div class="logo">AS</div>
+      <h1>AI-Shield</h1>
+    </div>
+    
+    <div class="status">
+      <div class="status-dot"></div>
+      <span>Proteção Ativa</span>
+    </div>
+    
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-value">0</div>
+        <div class="stat-label">Detectados</div>
       </div>
-      <p class="popup-subtitle">Proteção de Dados Pessoais (PII)</p>
-    </header>
-
-    <main class="popup-main">
-      <!-- Status Section -->
-      <section class="status-section">
-        <div class="status-indicator">
-          <div class="status-dot" id="status-dot"></div>
-          <span id="status-text">Carregando...</span>
-        </div>
-      </section>
-
-      <!-- Settings Section -->
-      <section class="settings-section">
-        <h2>Configurações</h2>
-        
-        <div class="setting-item">
-          <label class="switch">
-            <input type="checkbox" id="toggle-enabled" checked>
-            <span class="slider"></span>
-          </label>
-          <div class="setting-info">
-            <strong>Proteção Ativa</strong>
-            <p>Ativa/desativa a detecção de PII</p>
-          </div>
-        </div>
-
-        <div class="setting-item">
-          <label class="switch">
-            <input type="checkbox" id="toggle-block-submit" checked>
-            <span class="slider"></span>
-          </label>
-          <div class="setting-info">
-            <strong>Bloquear Envio</strong>
-            <p>Bloqueia o botão quando PII é detectado</p>
-          </div>
-        </div>
-
-        <div class="setting-item">
-          <label class="switch">
-            <input type="checkbox" id="toggle-show-warnings" checked>
-            <span class="slider"></span>
-          </label>
-          <div class="setting-info">
-            <strong>Exibir Alertas</strong>
-            <p>Mostra alertas visuais na página</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Statistics Section -->
-      <section class="stats-section">
-        <h2>Estatísticas</h2>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-value" id="total-detections">0</div>
-            <div class="stat-label">Detecções Totais</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="today-detections">0</div>
-            <div class="stat-label">Hoje</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Recent Activity -->
-      <section class="activity-section">
-        <h2>Atividade Recente</h2>
-        <div id="recent-logs" class="recent-logs">
-          <p class="no-logs">Nenhuma detecção registrada</p>
-        </div>
-      </section>
-
-      <!-- Compliance Info -->
-      <section class="compliance-section">
-        <h2>Compliance</h2>
-        <div class="compliance-badges">
-          <span class="badge">GDPR</span>
-          <span class="badge">CCPA</span>
-          <span class="badge">EU AI Act</span>
-        </div>
-        <p class="compliance-text">
-          Esta extensão opera 100% localmente. Nenhum dado é enviado para servidores externos.
-        </p>
-      </section>
-
-      <!-- Patterns Section -->
-      <section class="patterns-section">
-        <h2>Padrões Detectados</h2>
-        <details>
-          <summary>Ver todos os padrões de PII</summary>
-          <ul class="patterns-list">
-            <li><strong>SSN (USA):</strong> Social Security Number</li>
-            <li><strong>Passaporte (EU):</strong> Formato genérico</li>
-            <li><strong>Steuer-ID (DE):</strong> Tax ID Alemanha</li>
-            <li><strong>NIR (FR):</strong> Segurança social França</li>
-            <li><strong>NI Number (UK):</strong> National Insurance</li>
-            <li><strong>Cartões de Crédito:</strong> Formatos globais</li>
-            <li><strong>E-mails:</strong> Endereços de e-mail</li>
-            <li><strong>Telefones:</strong> Números internacionais</li>
-            <li><strong>Palavras-chave:</strong> confidential, password, api_key, etc.</li>
-          </ul>
-        </details>
-      </section>
-
-      <!-- Actions -->
-      <section class="actions-section">
-        <button class="btn btn-secondary" id="clear-logs-btn">
-          Limpar Logs
-        </button>
-        <button class="btn btn-primary" id="export-logs-btn">
-          Exportar Logs
-        </button>
-      </section>
-    </main>
-
-    <footer class="popup-footer">
-      <p>AI-Shield v1.0.0 | 100% Local</p>
-    </footer>
+      <div class="stat-card">
+        <div class="stat-value">100%</div>
+        <div class="stat-label">Conformidade</div>
+      </div>
+    </div>
+    
+    <div class="button-group">
+      <button class="btn-primary">Relatório</button>
+      <button class="btn-secondary">Configurações</button>
+    </div>
+    
+    <div class="toggle">
+      <span>Proteção Ativa</span>
+      <div class="toggle-switch"></div>
+    </div>
+    
+    <div class="footer">
+      <p>AI-Shield v1.0.0</p>
+      <p><a href="#">Política de Privacidade</a></p>
+    </div>
   </div>
-
+  
   <script src="popup.js"></script>
 </body>
 </html>
