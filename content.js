@@ -1,14 +1,14 @@
-// Padrões de detecção de dados sensíveis
+// Patterns for detecting sensitive data
 const sensitivePatterns = {
   cpf: /\d{3}\.\d{3}\.\d{3}-\d{2}/g,
   creditCard: /\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}/g,
   email: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
   phone: /\(\d{2}\)\s?\d{4,5}-\d{4}/g,
   iban: /[A-Z]{2}\d{2}[A-Z0-9]{1,30}/g,
-  keywords: /(confidencial|segredo|privado|senha|cartão|cpf|nif|iban)/gi
+  keywords: /(confidential|secret|private|password|card|cpf|nif|iban|ssn|social security)/gi
 };
 
-// Função para detectar dados sensíveis
+// Function to detect sensitive data
 function detectSensitiveData(text) {
   let detections = [];
   
@@ -17,15 +17,15 @@ function detectSensitiveData(text) {
     sensitivePatterns.cpf.lastIndex = 0;
   }
   if (sensitivePatterns.creditCard.test(text)) {
-    detections.push('Cartão de Crédito');
+    detections.push('Credit Card');
     sensitivePatterns.creditCard.lastIndex = 0;
   }
   if (sensitivePatterns.email.test(text)) {
-    detections.push('E-mail');
+    detections.push('Email');
     sensitivePatterns.email.lastIndex = 0;
   }
   if (sensitivePatterns.phone.test(text)) {
-    detections.push('Telefone');
+    detections.push('Phone');
     sensitivePatterns.phone.lastIndex = 0;
   }
   if (sensitivePatterns.iban.test(text)) {
@@ -33,14 +33,14 @@ function detectSensitiveData(text) {
     sensitivePatterns.iban.lastIndex = 0;
   }
   if (sensitivePatterns.keywords.test(text)) {
-    detections.push('Palavra-chave sensível');
+    detections.push('Sensitive keyword');
     sensitivePatterns.keywords.lastIndex = 0;
   }
   
   return detections;
 }
 
-// Monitorar campos de texto
+// Monitor text fields
 document.addEventListener('input', function(e) {
   if (e.target.tagName === 'TEXTAREA' || 
       (e.target.tagName === 'INPUT' && e.target.type === 'text') ||
@@ -50,28 +50,28 @@ document.addEventListener('input', function(e) {
     const detections = detectSensitiveData(text);
     
     if (detections.length > 0) {
-      // Enviar mensagem para o popup
+      // Send message to popup
       chrome.runtime.sendMessage({
         action: 'dataSensitiveDetected',
         detections: detections,
-        text: text.substring(0, 100) // Primeiros 100 caracteres
+        text: text.substring(0, 100)
       });
       
-      // Mostrar alerta visual
+      // Show visual alert
       showAlert(detections);
     }
   }
 }, true);
 
-// Função para mostrar alerta
+// Function to show alert
 function showAlert(detections) {
-  // Remover alerta anterior se existir
+  // Remove previous alert if exists
   const existingAlert = document.getElementById('ai-shield-alert');
   if (existingAlert) {
     existingAlert.remove();
   }
   
-  // Criar novo alerta
+  // Create new alert
   const alert = document.createElement('div');
   alert.id = 'ai-shield-alert';
   alert.style.cssText = `
@@ -90,20 +90,20 @@ function showAlert(detections) {
   `;
   
   alert.innerHTML = `
-    <strong>⚠️ DADO SENSÍVEL DETECTADO</strong>  
+    <strong>⚠️ SENSITIVE DATA DETECTED</strong>  
 
     ${detections.join(', ')}
   `;
   
   document.body.appendChild(alert);
   
-  // Remover alerta após 5 segundos
+  // Remove alert after 5 seconds
   setTimeout(() => {
     alert.remove();
   }, 5000);
 }
 
-// Adicionar animação CSS
+// Add animation CSS
 const style = document.createElement('style');
 style.textContent = `
   @keyframes slideIn {
@@ -119,5 +119,5 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Log para debug
-console.log('AI-Shield: Content script carregado com sucesso');
+// Debug log
+console.log('AI-Shield: Content script loaded successfully');
