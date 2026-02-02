@@ -50,15 +50,24 @@ document.addEventListener('input', function(e) {
     const detections = detectSensitiveData(text);
     
     if (detections.length > 0) {
-      // Send message to popup
-      chrome.runtime.sendMessage({
-        action: 'dataSensitiveDetected',
-        detections: detections,
-        text: text.substring(0, 100)
-      });
-      
-      // Show visual alert
+      // Show visual alert FIRST
       showAlert(detections);
+      
+      // Try to send message, but don't crash if it fails
+      try {
+        chrome.runtime.sendMessage(
+          {
+            action: 'dataSensitiveDetected',
+            detections: detections,
+            text: text.substring(0, 100)
+          },
+          function(response) {
+            // Optional: handle response
+          }
+        );
+      } catch (error) {
+        console.log('AI-Shield: Could not send message to background', error);
+      }
     }
   }
 }, true);
