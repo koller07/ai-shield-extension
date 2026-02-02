@@ -1,11 +1,11 @@
-// Carregar dados quando o popup abre
+// Load data when popup opens
 document.addEventListener('DOMContentLoaded', function() {
-  // Recuperar dados armazenados
+  // Retrieve stored data
   chrome.storage.local.get(['detectionCount', 'protectionEnabled'], function(result) {
     const detectionCount = result.detectionCount || 0;
     const protectionEnabled = result.protectionEnabled !== false;
     
-    // Atualizar UI
+    // Update UI
     document.querySelector('.stat-value').textContent = detectionCount;
     
     const toggleSwitch = document.querySelector('.toggle-switch');
@@ -17,35 +17,35 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-// Botão de Relatório
+// Report button
 document.querySelectorAll('button')[0].addEventListener('click', function() {
-  alert('Relatório completo em breve!');
+  alert('Full report coming soon!');
 });
 
-// Botão de Configurações
+// Settings button
 document.querySelectorAll('button')[1].addEventListener('click', function() {
-  alert('Configurações em breve!');
+  alert('Settings coming soon!');
 });
 
-// Toggle de Proteção
+// Protection toggle
 document.querySelector('.toggle-switch').addEventListener('click', function() {
   this.classList.toggle('off');
   
   const isEnabled = !this.classList.contains('off');
   chrome.storage.local.set({ protectionEnabled: isEnabled });
   
-  alert(isEnabled ? 'Proteção ativada' : 'Proteção desativada');
+  alert(isEnabled ? 'Protection enabled' : 'Protection disabled');
 });
 
-// Receber mensagens do content script
+// Receive messages from content script
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.action === 'dataSensitiveDetected') {
-    // Incrementar contador
+    // Increment counter
     chrome.storage.local.get(['detectionCount'], function(result) {
       const newCount = (result.detectionCount || 0) + 1;
       chrome.storage.local.set({ detectionCount: newCount });
       
-      // Atualizar UI
+      // Update UI
       document.querySelector('.stat-value').textContent = newCount;
     });
   }
