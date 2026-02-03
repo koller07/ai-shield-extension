@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "AI-Shield",
   "version": "1.0.0",
-  "description": "Data protection for AI platforms - GDPR, EU AI Act, CCPA compliance",
+  "description": "Real-time data protection for AI platforms - GDPR, EU AI Act, CCPA compliant",
   "permissions": [
     "storage",
     "activeTab"
@@ -11,14 +11,13 @@
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",
     "https://claude.ai/*",
-    "https://console.anthropic.com/*",
     "https://gemini.google.com/*",
     "https://copilot.microsoft.com/*",
-    "https://perplexity.ai/*",
+    "https://www.perplexity.ai/*",
     "https://chat.mistral.ai/*",
-    "https://llama.meta.com/*",
-    "https://huggingface.co/chat/*",
-    "https://console.groq.com/*"
+    "https://huggingface.co/*",
+    "https://groq.com/*",
+    "https://www.anthropic.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -30,14 +29,13 @@
         "https://chatgpt.com/*",
         "https://chat.openai.com/*",
         "https://claude.ai/*",
-        "https://console.anthropic.com/*",
         "https://gemini.google.com/*",
         "https://copilot.microsoft.com/*",
-        "https://perplexity.ai/*",
+        "https://www.perplexity.ai/*",
         "https://chat.mistral.ai/*",
-        "https://llama.meta.com/*",
-        "https://huggingface.co/chat/*",
-        "https://console.groq.com/*"
+        "https://huggingface.co/*",
+        "https://groq.com/*",
+        "https://www.anthropic.com/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
