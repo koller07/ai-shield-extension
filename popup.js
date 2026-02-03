@@ -1,52 +1,59 @@
-// Load data when popup opens
-document.addEventListener('DOMContentLoaded', function() {
-  // Retrieve stored data
-  chrome.storage.local.get(['detectionCount', 'protectionEnabled'], function(result) {
-    const detectionCount = result.detectionCount || 0;
-    const protectionEnabled = result.protectionEnabled !== false;
-    
-    // Update UI
-    document.querySelector('.stat-value').textContent = detectionCount;
-    
-    const toggleSwitch = document.querySelector('.toggle-switch');
-    if (protectionEnabled) {
-      toggleSwitch.classList.remove('off');
-    } else {
-      toggleSwitch.classList.add('off');
-    }
-  });
-});
-
-// Report button
-document.querySelectorAll('button')[0].addEventListener('click', function() {
-  alert('Full report coming soon!');
-});
-
-// Settings button
-document.querySelectorAll('button')[1].addEventListener('click', function() {
-  alert('Settings coming soon!');
-});
-
-// Protection toggle
-document.querySelector('.toggle-switch').addEventListener('click', function() {
-  this.classList.toggle('off');
+// Load detection count
+chrome.storage.local.get(['detectionCount'], function(result) {
+  const count = result.detectionCount || 0;
+  document.getElementById('detectionCount').textContent = count;
   
-  const isEnabled = !this.classList.contains('off');
-  chrome.storage.local.set({ protectionEnabled: isEnabled });
-  
-  alert(isEnabled ? 'Protection enabled' : 'Protection disabled');
+  // Calculate fine prevented (€50,000 per detection)
+  const fineValue = count * 50000;
+  document.getElementById('finePreventedValue').textContent = '€' + fineValue.toLocaleString();
 });
 
-// Receive messages from content script
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  if (request.action === 'dataSensitiveDetected') {
-    // Increment counter
-    chrome.storage.local.get(['detectionCount'], function(result) {
-      const newCount = (result.detectionCount || 0) + 1;
-      chrome.storage.local.set({ detectionCount: newCount });
-      
-      // Update UI
-      document.querySelector('.stat-value').textContent = newCount;
-    });
+// Load settings
+chrome.storage.local.get(['aishield_user_id', 'aishield_company_id'], function(result) {
+  if (result.aishield_user_id) {
+    document.getElementById('userId').value = result.aishield_user_id;
+  }
+  if (result.aishield_company_id) {
+    document.getElementById('companyId').value = result.aishield_company_id;
   }
 });
+
+// Save settings
+function saveSettings() {
+  const userId = document.getElementById('userId').value;
+  const companyId = document.getElementById('companyId').value;
+  
+  if (!userId || !companyId) {
+    alert('Please fill in both fields');
+    return;
+  }
+  
+  chrome.storage.local.set({
+    'aishield_user_id': userId,
+    'aishield_company_id': companyId
+  }, function() {
+    alert('Settings saved! Your data will now be tracked.');
+  });
+}
+
+// Reset counter
+function resetCounter() {
+  if (confirm('Are you sure? This will reset the detection counter.')) {
+    chrome.storage.local.set({ detectionCount: 0 }, function() {
+      document.getElementById('detectionCount').textContent = '0';
+      document.getElementById('finePreventedValue').textContent = '€0';
+      alert('Counter reset!');
+    });
+  }
+}
+
+// Update counter every second
+setInterval(() => {
+  chrome.storage.local.get(['detectionCount'], function(result) {
+    const count = result.detectionCount || 0;
+    document.getElementById('detectionCount').textContent = count;
+    
+    const fineValue = count * 50000;
+    document.getElementById('finePreventedValue').textContent = '€' + fineValue.toLocaleString();
+  });
+}, 1000);
