@@ -1,102 +1,50 @@
 // ============================================
 // AI-SHIELD CONTENT SCRIPT
-// Detects sensitive data and sends to backend
+// Detects sensitive data in AI platforms
+// Sends to backend for logging
 // ============================================
 
-// Patterns for detecting sensitive data
-const sensitivePatterns = {
-  cpf: /\d{3}\.\d{3}\.\d{3}-\d{2}/g,
-  nif: /\d{9}/g,
-  creditCard: /\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}/g,
-  email: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
-  phone: /\(\d{2}\)\s?\d{4,5}-\d{4}/g,
-  iban: /[A-Z]{2}\d{2}[A-Z0-9]{1,30}/g,
-  ssn: /\d{3}-\d{2}-\d{4}/g,
-  keywords: /(confidential|secret|private|password|card|cpf|nif|iban|ssn|social security|medical|diagnosis|treatment)/gi
+// Configuration
+const BACKEND_URL = 'https://ai-shield-backend-production.up.railway.app';
+const COMPANY_ID = localStorage.getItem('ai-shield-company-id' ) || 'default-company';
+const USER_ID = localStorage.getItem('ai-shield-user-id') || 'anonymous-' + Math.random().toString(36).substr(2, 9);
+
+// Sensitive data patterns
+const DETECTION_PATTERNS = {
+  // CPF (Portuguese)
+  'CPF': /\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/g,
+  
+  // IBAN (European)
+  'IBAN': /\b[A-Z]{2}\d{2}[A-Z0-9]{1,30}\b/g,
+  
+  // Credit Card
+  'CREDIT_CARD': /\b(?:\d{4}[-\s]?){3}\d{4}\b/g,
+  
+  // Email
+  'EMAIL': /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
+  
+  // Phone (International)
+  'PHONE': /\b(?:\+\d{1,3}[-.\s]?)?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}\b/g,
+  
+  // Social Security Number (US)
+  'SSN': /\b\d{3}-\d{2}-\d{4}\b/g,
+  
+  // Keywords (Confidential, Secret, etc)
+  'SENSITIVE_KEYWORD': /\b(confidential|secret|password|api.?key|token|private|classified)\b/gi
 };
 
-// Function to detect sensitive data
-function detectSensitiveData(text) {
-  let detections = [];
+// Store detections count
+let detectionsCount = 0;
+
+// Listen for text input in contenteditable elements
+document.addEventListener('input', (event) => {
+  const target = event.target;
   
-  if (sensitivePatterns.cpf.test(text)) {
-    detections.push('CPF');
-    sensitivePatterns.cpf.lastIndex = 0;
-  }
-  if (sensitivePatterns.nif.test(text)) {
-    detections.push('NIF');
-    sensitivePatterns.nif.lastIndex = 0;
-  }
-  if (sensitivePatterns.creditCard.test(text)) {
-    detections.push('Credit Card');
-    sensitivePatterns.creditCard.lastIndex = 0;
-  }
-  if (sensitivePatterns.email.test(text)) {
-    detections.push('Email');
-    sensitivePatterns.email.lastIndex = 0;
-  }
-  if (sensitivePatterns.phone.test(text)) {
-    detections.push('Phone');
-    sensitivePatterns.phone.lastIndex = 0;
-  }
-  if (sensitivePatterns.iban.test(text)) {
-    detections.push('IBAN');
-    sensitivePatterns.iban.lastIndex = 0;
-  }
-  if (sensitivePatterns.ssn.test(text)) {
-    detections.push('SSN');
-    sensitivePatterns.ssn.lastIndex = 0;
-  }
-  if (sensitivePatterns.keywords.test(text)) {
-    detections.push('Sensitive keyword');
-    sensitivePatterns.keywords.lastIndex = 0;
-  }
-  
-  return detections;
-}
-
-// Get user ID from localStorage (set by popup)
-function getUserId() {
-  return localStorage.getItem('aishield_user_id') || 'anonymous';
-}
-
-// Get company ID from localStorage (set by popup)
-function getCompanyId() {
-  return localStorage.getItem('aishield_company_id') || 'unknown';
-}
-
-// Send detection to backend
-function sendDetectionToBackend(detectionType, aiPlatform) {
-  const backendUrl = 'https://api.aishield.eu/api/detection'; // Change to your backend URL
-  
-  try {
-    fetch(backendUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        userId: getUserId( ),
-        companyId: getCompanyId(),
-        detectionType: detectionType,
-        aiPlatform: aiPlatform,
-        timestamp: new Date().toISOString()
-      })
-    }).catch(error => {
-      console.log('AI-Shield: Could not send to backend', error);
-    });
-  } catch (error) {
-    console.log('AI-Shield: Error sending detection', error);
-  }
-}
-
-// Monitor text fields
-document.addEventListener('input', function(e) {
-  if (e.target.tagName === 'TEXTAREA' || 
-      (e.target.tagName === 'INPUT' && e.target.type === 'text') ||
-      e.target.contentEditable === 'true') {
+  // Check if it's a text input area
+  if (target.contentEditable === 'true' || target.tagName === 'TEXTAREA' || target.tagName === 'INPUT') {
+    const text = target.textContent || target.value;
     
-    const text = e.target.value || e.target.textContent;
+    // Check for sensitive data
     const detections = detectSensitiveData(text);
     
     if (detections.length > 0) {
@@ -104,75 +52,142 @@ document.addEventListener('input', function(e) {
       showAlert(detections);
       
       // Send to backend
-      detections.forEach(detection => {
-        sendDetectionToBackend(detection, window.location.hostname);
-      });
+      sendDetectionToBackend(detections);
       
-      // Update counter in popup
-      updateDetectionCounter();
+      // Update counter
+      detectionsCount += detections.length;
+      updateBadge();
     }
   }
 }, true);
 
-// Function to show alert
+// Detect sensitive data
+function detectSensitiveData(text) {
+  const detections = [];
+  
+  for (const [type, pattern] of Object.entries(DETECTION_PATTERNS)) {
+    const matches = text.match(pattern);
+    if (matches) {
+      detections.push({
+        type: type,
+        count: matches.length,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }
+  
+  return detections;
+}
+
+// Show visual alert
 function showAlert(detections) {
+  // Remove existing alert
   const existingAlert = document.getElementById('ai-shield-alert');
   if (existingAlert) {
     existingAlert.remove();
   }
   
+  // Create alert element
   const alert = document.createElement('div');
   alert.id = 'ai-shield-alert';
   alert.style.cssText = `
     position: fixed;
     top: 20px;
     right: 20px;
-    background-color: #ff6b6b;
+    background-color: #dc2626;
     color: white;
-    padding: 15px 20px;
+    padding: 16px 20px;
     border-radius: 8px;
-    font-family: Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-size: 14px;
-    z-index: 10000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    animation: slideIn 0.3s ease-out;
+    font-weight: 600;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    z-index: 999999;
+    max-width: 300px;
   `;
   
+  const detectionList = detections.map(d => `${d.type} (${d.count})`).join(', ');
   alert.innerHTML = `
     <strong>⚠️ SENSITIVE DATA DETECTED</strong>  
 
-    ${detections.join(', ')}
+    <small>${detectionList}</small>
   `;
   
   document.body.appendChild(alert);
   
+  // Remove after 5 seconds
   setTimeout(() => {
     alert.remove();
   }, 5000);
 }
 
-// Add animation CSS
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes slideIn {
-    from {
-      transform: translateX(400px);
-      opacity: 0;
+// Send detection to backend
+async function sendDetectionToBackend(detections) {
+  try {
+    for (const detection of detections) {
+      const response = await fetch(`${BACKEND_URL}/api/detection`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: USER_ID,
+          companyId: COMPANY_ID,
+          detectionType: detection.type,
+          aiPlatform: getAIPlatform(),
+          timestamp: detection.timestamp
+        })
+      });
+      
+      if (response.ok) {
+        console.log('AI-Shield: Detection sent to backend');
+      } else {
+        console.error('AI-Shield: Failed to send detection');
+      }
     }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
+  } catch (error) {
+    console.error('AI-Shield: Backend connection error', error);
   }
-`;
-document.head.appendChild(style);
+}
 
-// Update detection counter
-function updateDetectionCounter() {
-  chrome.storage.local.get(['detectionCount'], function(result) {
-    const newCount = (result.detectionCount || 0) + 1;
-    chrome.storage.local.set({ detectionCount: newCount });
+// Get current AI platform
+function getAIPlatform() {
+  const hostname = window.location.hostname;
+  
+  if (hostname.includes('chatgpt')) return 'ChatGPT';
+  if (hostname.includes('claude')) return 'Claude';
+  if (hostname.includes('gemini')) return 'Gemini';
+  if (hostname.includes('copilot')) return 'Copilot';
+  if (hostname.includes('perplexity')) return 'Perplexity';
+  if (hostname.includes('mistral')) return 'Mistral';
+  if (hostname.includes('huggingface')) return 'Hugging Face';
+  if (hostname.includes('groq')) return 'Groq';
+  if (hostname.includes('llama')) return 'Llama';
+  
+  return 'Unknown AI';
+}
+
+// Update badge with detection count
+function updateBadge() {
+  chrome.runtime.sendMessage({
+    action: 'updateBadge',
+    count: detectionsCount
+  }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.log('AI-Shield: Badge update error (normal if popup closed)');
+    }
   });
 }
 
-console.log('AI-Shield: Content script loaded successfully');
+// Listen for messages from popup
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'getCount') {
+    sendResponse({ count: detectionsCount });
+  }
+  if (request.action === 'resetCount') {
+    detectionsCount = 0;
+    sendResponse({ success: true });
+  }
+});
+
+console.log('AI-Shield: Content script loaded');
