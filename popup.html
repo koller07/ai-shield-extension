@@ -12,9 +12,9 @@
     }
     
     body {
-      width: 350px;
+      width: 320px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #1e40af 0%, #0f766e 100%);
+      background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
       color: white;
       padding: 0;
     }
@@ -26,154 +26,154 @@
     .header {
       display: flex;
       align-items: center;
+      gap: 10px;
       margin-bottom: 20px;
-      border-bottom: 2px solid rgba(255,255,255,0.2);
-      padding-bottom: 15px;
     }
     
-    .header h1 {
-      font-size: 18px;
-      margin-left: 10px;
-    }
-    
-    .status {
-      background: rgba(255,255,255,0.1);
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-    }
-    
-    .status-label {
-      font-size: 12px;
-      opacity: 0.8;
-      margin-bottom: 5px;
-    }
-    
-    .status-value {
-      font-size: 24px;
-      font-weight: bold;
-    }
-    
-    .stats {
-      background: rgba(255,255,255,0.1);
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      font-size: 13px;
-    }
-    
-    .stat-row {
+    .logo {
+      width: 32px;
+      height: 32px;
+      background: white;
+      border-radius: 6px;
       display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #1e40af;
+      font-size: 14px;
     }
     
-    .stat-row:last-child {
-      margin-bottom: 0;
+    .title {
+      font-size: 18px;
+      font-weight: 700;
     }
     
-    .setup-section {
-      background: rgba(255,255,255,0.1);
-      padding: 15px;
+    .stat {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 8px;
-      margin-bottom: 15px;
+      padding: 16px;
+      margin-bottom: 16px;
+      text-align: center;
     }
     
-    .setup-label {
+    .stat-label {
       font-size: 12px;
       opacity: 0.8;
       margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+    }
+    
+    .input-group {
+      margin-bottom: 16px;
+    }
+    
+    .input-label {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-bottom: 6px;
+      display: block;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     
     input {
       width: 100%;
-      padding: 8px;
-      border: none;
-      border-radius: 4px;
-      margin-bottom: 8px;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
       font-size: 12px;
     }
     
+    input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 8px;
+    }
+    
     button {
-      width: 100%;
+      flex: 1;
       padding: 10px;
-      background: #10b981;
-      color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
       cursor: pointer;
-      font-weight: bold;
-      margin-bottom: 8px;
-      transition: background 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.2s;
     }
     
-    button:hover {
-      background: #059669;
+    .btn-primary {
+      background: white;
+      color: #1e40af;
     }
     
-    button.secondary {
-      background: rgba(255,255,255,0.2);
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
     
-    button.secondary:hover {
-      background: rgba(255,255,255,0.3);
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.3);
     }
     
     .footer {
-      text-align: center;
       font-size: 11px;
       opacity: 0.7;
-      margin-top: 15px;
-    }
-    
-    .link {
-      color: #10b981;
-      text-decoration: none;
-      cursor: pointer;
+      text-align: center;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <div>🛡️</div>
-      <h1>AI-Shield</h1>
+      <div class="logo">AS</div>
+      <div class="title">AI-Shield</div>
     </div>
     
-    <div class="status">
-      <div class="status-label">Detections Today</div>
-      <div class="status-value" id="detectionCount">0</div>
+    <div class="stat">
+      <div class="stat-label">Detections This Session</div>
+      <div class="stat-value" id="count">0</div>
     </div>
     
-    <div class="stats">
-      <div class="stat-row">
-        <span>Status:</span>
-        <span id="status">🟢 Active</span>
-      </div>
-      <div class="stat-row">
-        <span>Platform:</span>
-        <span id="platform">Monitoring...</span>
-      </div>
-      <div class="stat-row">
-        <span>Fine Prevented:</span>
-        <span id="finePreventedValue">€0</span>
-      </div>
+    <div class="input-group">
+      <label class="input-label">Company ID</label>
+      <input type="text" id="companyId" placeholder="Enter your company ID">
     </div>
     
-    <div class="setup-section">
-      <div class="setup-label">User ID (for reports)</div>
-      <input type="text" id="userId" placeholder="your@email.com">
-      
-      <div class="setup-label">Company ID</div>
-      <input type="text" id="companyId" placeholder="your-company-id">
-      
-      <button onclick="saveSettings()">Save Settings</button>
-      <button class="secondary" onclick="resetCounter()">Reset Counter</button>
+    <div class="input-group">
+      <label class="input-label">User ID</label>
+      <input type="text" id="userId" placeholder="Enter your user ID">
+    </div>
+    
+    <div class="button-group">
+      <button class="btn-primary" id="resetBtn">Reset Counter</button>
+      <button class="btn-secondary" onclick="window.open('https://aishield.eu', '_blank' )">Dashboard</button>
     </div>
     
     <div class="footer">
-      <p>Protecting your data since 2026</p>
-      <p><a class="link" href="https://aishield.eu" target="_blank">Visit Dashboard</a></p>
+      Protecting your data in AI platforms
     </div>
   </div>
   
