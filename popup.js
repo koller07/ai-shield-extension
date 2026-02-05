@@ -1,59 +1,48 @@
-// Load detection count
-chrome.storage.local.get(['detectionCount'], function(result) {
-  const count = result.detectionCount || 0;
-  document.getElementById('detectionCount').textContent = count;
-  
-  // Calculate fine prevented (€50,000 per detection)
-  const fineValue = count * 50000;
-  document.getElementById('finePreventedValue').textContent = '€' + fineValue.toLocaleString();
-});
+// ============================================
+// AI-SHIELD POPUP SCRIPT
+// Displays detection statistics
+// ============================================
 
-// Load settings
-chrome.storage.local.get(['aishield_user_id', 'aishield_company_id'], function(result) {
-  if (result.aishield_user_id) {
-    document.getElementById('userId').value = result.aishield_user_id;
-  }
-  if (result.aishield_company_id) {
-    document.getElementById('companyId').value = result.aishield_company_id;
-  }
-});
-
-// Save settings
-function saveSettings() {
-  const userId = document.getElementById('userId').value;
-  const companyId = document.getElementById('companyId').value;
-  
-  if (!userId || !companyId) {
-    alert('Please fill in both fields');
-    return;
-  }
-  
-  chrome.storage.local.set({
-    'aishield_user_id': userId,
-    'aishield_company_id': companyId
-  }, function() {
-    alert('Settings saved! Your data will now be tracked.');
-  });
-}
-
-// Reset counter
-function resetCounter() {
-  if (confirm('Are you sure? This will reset the detection counter.')) {
-    chrome.storage.local.set({ detectionCount: 0 }, function() {
-      document.getElementById('detectionCount').textContent = '0';
-      document.getElementById('finePreventedValue').textContent = '€0';
-      alert('Counter reset!');
+document.addEventListener('DOMContentLoaded', () => {
+  // Get detection count from content script
+  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+    chrome.tabs.sendMessage(tabs[0].id, {action: 'getCount'}, (response) => {
+      if (response && response.count) {
+        document.getElementById('count').textContent = response.count;
+      }
     });
-  }
-}
-
-// Update counter every second
-setInterval(() => {
-  chrome.storage.local.get(['detectionCount'], function(result) {
-    const count = result.detectionCount || 0;
-    document.getElementById('detectionCount').textContent = count;
-    
-    const fineValue = count * 50000;
-    document.getElementById('finePreventedValue').textContent = '€' + fineValue.toLocaleString();
   });
-}, 1000);
+  
+  // Reset button
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, {action: 'resetCount'}, (response) => {
+        if (response && response.success) {
+          document.getElementById('count').textContent = '0';
+        }
+      });
+    });
+  });
+  
+  // Company ID input
+  const companyIdInput = document.getElementById('companyId');
+  const savedCompanyId = localStorage.getItem('ai-shield-company-id');
+  if (savedCompanyId) {
+    companyIdInput.value = savedCompanyId;
+  }
+  
+  companyIdInput.addEventListener('change', () => {
+    localStorage.setItem('ai-shield-company-id', companyIdInput.value);
+  });
+  
+  // User ID input
+  const userIdInput = document.getElementById('userId');
+  const savedUserId = localStorage.getItem('ai-shield-user-id');
+  if (savedUserId) {
+    userIdInput.value = savedUserId;
+  }
+  
+  userIdInput.addEventListener('change', () => {
+    localStorage.setItem('ai-shield-user-id', userIdInput.value);
+  });
+});
