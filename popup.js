@@ -1,48 +1,129 @@
-// ============================================
-// AI-SHIELD POPUP SCRIPT
-// Displays detection statistics
-// ============================================
+// Elementos do DOM
+const detectionCountElement = document.getElementById('detectionCount');
+const companyIdInput = document.getElementById('companyId');
+const userIdInput = document.getElementById('userId');
+const saveBtn = document.getElementById('saveBtn');
+const resetBtn = document.getElementById('resetBtn');
+const editBtn = document.getElementById('editBtn');
+const configSection = document.getElementById('configSection');
+const displaySection = document.getElementById('displaySection');
+const displayCompanyId = document.getElementById('displayCompanyId');
+const displayUserId = document.getElementById('displayUserId');
 
+// Carregar dados salvos ao abrir o popup
 document.addEventListener('DOMContentLoaded', () => {
-  // Get detection count from content script
-  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, {action: 'getCount'}, (response) => {
-      if (response && response.count) {
-        document.getElementById('count').textContent = response.count;
-      }
-    });
-  });
-  
-  // Reset button
-  document.getElementById('resetBtn').addEventListener('click', () => {
-    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, {action: 'resetCount'}, (response) => {
-        if (response && response.success) {
-          document.getElementById('count').textContent = '0';
-        }
-      });
-    });
-  });
-  
-  // Company ID input
-  const companyIdInput = document.getElementById('companyId');
-  const savedCompanyId = localStorage.getItem('ai-shield-company-id');
-  if (savedCompanyId) {
-    companyIdInput.value = savedCompanyId;
-  }
-  
-  companyIdInput.addEventListener('change', () => {
-    localStorage.setItem('ai-shield-company-id', companyIdInput.value);
-  });
-  
-  // User ID input
-  const userIdInput = document.getElementById('userId');
-  const savedUserId = localStorage.getItem('ai-shield-user-id');
-  if (savedUserId) {
-    userIdInput.value = savedUserId;
-  }
-  
-  userIdInput.addEventListener('change', () => {
-    localStorage.setItem('ai-shield-user-id', userIdInput.value);
-  });
+    loadSavedData();
+    updateDetectionCount();
 });
+
+// Carregar dados salvos do localStorage
+function loadSavedData() {
+    chrome.storage.local.get(['companyId', 'userId', 'detectionCount'], (result) => {
+        const companyId = result.companyId || '';
+        const userId = result.userId || '';
+
+        if (companyId && userId) {
+            // Mostrar modo de exibição
+            displayCompanyId.textContent = companyId;
+            displayUserId.textContent = userId;
+            configSection.style.display = 'none';
+            displaySection.style.display = 'block';
+        } else {
+            // Mostrar modo de configuração
+            configSection.style.display = 'block';
+            displaySection.style.display = 'none';
+            if (companyId) companyIdInput.value = companyId;
+            if (userId) userIdInput.value = userId;
+        }
+
+        // Atualizar contador
+        const count = result.detectionCount || 0;
+        detectionCountElement.textContent = count;
+    });
+}
+
+// Atualizar contador de detecções
+function updateDetectionCount() {
+    chrome.storage.local.get(['detectionCount'], (result) => {
+        const count = result.detectionCount || 0;
+        detectionCountElement.textContent = count;
+    });
+}
+
+// Salvar configuração
+saveBtn.addEventListener('click', () => {
+    const companyId = companyIdInput.value.trim();
+    const userId = userIdInput.value.trim();
+
+    if (!companyId || !userId) {
+        alert('Please fill in both Company ID and User ID');
+        return;
+    }
+
+    // Salvar no localStorage
+    chrome.storage.local.set({
+        companyId: companyId,
+        userId: userId
+    }, () => {
+        // Enviar para backend
+        sendConfigToBackend(companyId, userId);
+        
+        // Atualizar UI
+        loadSavedData();
+    });
+});
+
+// Resetar configuração
+resetBtn.addEventListener('click', () => {
+    companyIdInput.value = '';
+    userIdInput.value = '';
+    chrome.storage.local.set({
+        companyId: '',
+        userId: ''
+    }, () => {
+        loadSavedData();
+    });
+});
+
+// Editar configuração
+editBtn.addEventListener('click', () => {
+    configSection.style.display = 'block';
+    displaySection.style.display = 'none';
+    companyIdInput.value = displayCompanyId.textContent;
+    userIdInput.value = displayUserId.textContent;
+});
+
+// Enviar configuração para o backend
+function sendConfigToBackend(companyId, userId) {
+    const backendUrl = 'https://ai-shield-backend-production.up.railway.app';
+    
+    fetch(`${backendUrl}/api/companies`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            companyId: companyId,
+            companyName: companyId,
+            userId: userId,
+            userName: userId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Configuration saved to backend:', data);
+    })
+    .catch(error => {
+        console.error('Error sending configuration to backend:', error);
+    });
+}
+
+// Ouvir mensagens do content.js
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'updateDetectionCount') {
+        updateDetectionCount();
+    }
+});
+
+// Atualizar contador a cada 2 segundos
+setInterval(updateDetectionCount, 2000);
