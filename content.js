@@ -1,193 +1,205 @@
-// ============================================
-// AI-SHIELD CONTENT SCRIPT
-// Detects sensitive data in AI platforms
-// Sends to backend for logging
-// ============================================
-
-// Configuration
-const BACKEND_URL = 'https://ai-shield-backend-production.up.railway.app';
-const COMPANY_ID = localStorage.getItem('ai-shield-company-id' ) || 'default-company';
-const USER_ID = localStorage.getItem('ai-shield-user-id') || 'anonymous-' + Math.random().toString(36).substr(2, 9);
-
-// Sensitive data patterns
-const DETECTION_PATTERNS = {
-  // CPF (Portuguese)
-  'CPF': /\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/g,
-  
-  // IBAN (European)
-  'IBAN': /\b[A-Z]{2}\d{2}[A-Z0-9]{1,30}\b/g,
-  
-  // Credit Card
-  'CREDIT_CARD': /\b(?:\d{4}[-\s]?){3}\d{4}\b/g,
-  
-  // Email
-  'EMAIL': /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
-  
-  // Phone (International)
-  'PHONE': /\b(?:\+\d{1,3}[-.\s]?)?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}\b/g,
-  
-  // Social Security Number (US)
-  'SSN': /\b\d{3}-\d{2}-\d{4}\b/g,
-  
-  // Keywords (Confidential, Secret, etc)
-  'SENSITIVE_KEYWORD': /\b(confidential|secret|password|api.?key|token|private|classified)\b/gi
+// Padrões de detecção de dados sensíveis
+const sensitivePatterns = {
+    // CPF (Brasil) - formato: 123.456.789-00 ou 12345678900
+    cpf: /(\d{3}\.\d{3}\.\d{3}-\d{2}|\d{11})/g,
+    
+    // CNPJ (Brasil) - formato: 12.345.678/0001-90 ou 12345678000190
+    cnpj: /(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}|\d{14})/g,
+    
+    // NIF (Portugal) - formato: 123456789
+    nif: /\b\d{9}\b/g,
+    
+    // IBAN - formato: PT50 0035 1234 5678 9012 3456 78
+    iban: /[A-Z]{2}\d{2}\s?\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\s?\d{2}/g,
+    
+    // Cartão de Crédito - formato: 4532 1234 5678 9010
+    creditCard: /\b\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\b/g,
+    
+    // Email corporativo
+    email: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,
+    
+    // Telefone - formato: +55 11 98765-4321 ou 11 98765-4321
+    phone: /(\+\d{1,3}\s?)?\(\d{2,3}\)\s?\d{4,5}-\d{4}|\+\d{1,3}\s?\d{2,3}\s?\d{4,5}\s?\d{4}/g,
+    
+    // Palavras-chave sensíveis
+    keywords: /\b(confidential|secret|private|password|token|api_key|segredo|confidencial|privado|senha|token|chave|diagnóstico|diagnóstico médico|patient|paciente|medical|médico)\b/gi
 };
 
-// Store detections count
-let detectionsCount = 0;
-
-// Listen for text input in contenteditable elements
-document.addEventListener('input', (event) => {
-  const target = event.target;
-  
-  // Check if it's a text input area
-  if (target.contentEditable === 'true' || target.tagName === 'TEXTAREA' || target.tagName === 'INPUT') {
-    const text = target.textContent || target.value;
-    
-    // Check for sensitive data
-    const detections = detectSensitiveData(text);
-    
-    if (detections.length > 0) {
-      // Show visual alert
-      showAlert(detections);
-      
-      // Send to backend
-      sendDetectionToBackend(detections);
-      
-      // Update counter
-      detectionsCount += detections.length;
-      updateBadge();
-    }
-  }
-}, true);
-
-// Detect sensitive data
+// Função para detectar dados sensíveis
 function detectSensitiveData(text) {
-  const detections = [];
-  
-  for (const [type, pattern] of Object.entries(DETECTION_PATTERNS)) {
-    const matches = text.match(pattern);
-    if (matches) {
-      detections.push({
-        type: type,
-        count: matches.length,
-        timestamp: new Date().toISOString()
-      });
+    const detections = [];
+    
+    for (const [type, pattern] of Object.entries(sensitivePatterns)) {
+        const matches = text.match(pattern);
+        if (matches) {
+            matches.forEach(match => {
+                detections.push({
+                    type: type.toUpperCase(),
+                    value: match,
+                    timestamp: new Date().toISOString()
+                });
+            });
+        }
     }
-  }
-  
-  return detections;
+    
+    return detections;
 }
 
-// Show visual alert
-function showAlert(detections) {
-  // Remove existing alert
-  const existingAlert = document.getElementById('ai-shield-alert');
-  if (existingAlert) {
-    existingAlert.remove();
-  }
-  
-  // Create alert element
-  const alert = document.createElement('div');
-  alert.id = 'ai-shield-alert';
-  alert.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background-color: #dc2626;
-    color: white;
-    padding: 16px 20px;
-    border-radius: 8px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    z-index: 999999;
-    max-width: 300px;
-  `;
-  
-  const detectionList = detections.map(d => `${d.type} (${d.count})`).join(', ');
-  alert.innerHTML = `
-    <strong>⚠️ SENSITIVE DATA DETECTED</strong>  
-
-    <small>${detectionList}</small>
-  `;
-  
-  document.body.appendChild(alert);
-  
-  // Remove after 5 seconds
-  setTimeout(() => {
-    alert.remove();
-  }, 5000);
-}
-
-// Send detection to backend
-async function sendDetectionToBackend(detections) {
-  try {
-    for (const detection of detections) {
-      const response = await fetch(`${BACKEND_URL}/api/detection`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          userId: USER_ID,
-          companyId: COMPANY_ID,
-          detectionType: detection.type,
-          aiPlatform: getAIPlatform(),
-          timestamp: detection.timestamp
-        })
-      });
-      
-      if (response.ok) {
-        console.log('AI-Shield: Detection sent to backend');
-      } else {
-        console.error('AI-Shield: Failed to send detection');
-      }
+// Função para mostrar alerta visual
+function showAlert(detectionType) {
+    // Remover alerta anterior se existir
+    const existingAlert = document.getElementById('ai-shield-alert');
+    if (existingAlert) {
+        existingAlert.remove();
     }
-  } catch (error) {
-    console.error('AI-Shield: Backend connection error', error);
-  }
+
+    // Criar novo alerta
+    const alert = document.createElement('div');
+    alert.id = 'ai-shield-alert';
+    alert.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+        color: white;
+        padding: 16px 20px;
+        border-radius: 8px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        z-index: 999999;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        animation: slideIn 0.3s ease-out;
+    `;
+
+    // Adicionar ícone
+    const icon = document.createElement('span');
+    icon.textContent = '⚠️';
+    icon.style.fontSize = '18px';
+
+    // Adicionar texto
+    const text = document.createElement('span');
+    text.textContent = `SENSITIVE DATA DETECTED: ${detectionType}`;
+
+    alert.appendChild(icon);
+    alert.appendChild(text);
+    document.body.appendChild(alert);
+
+    // Remover alerta após 4 segundos
+    setTimeout(() => {
+        alert.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => alert.remove(), 300);
+    }, 4000);
 }
 
-// Get current AI platform
-function getAIPlatform() {
-  const hostname = window.location.hostname;
-  
-  if (hostname.includes('chatgpt')) return 'ChatGPT';
-  if (hostname.includes('claude')) return 'Claude';
-  if (hostname.includes('gemini')) return 'Gemini';
-  if (hostname.includes('copilot')) return 'Copilot';
-  if (hostname.includes('perplexity')) return 'Perplexity';
-  if (hostname.includes('mistral')) return 'Mistral';
-  if (hostname.includes('huggingface')) return 'Hugging Face';
-  if (hostname.includes('groq')) return 'Groq';
-  if (hostname.includes('llama')) return 'Llama';
-  
-  return 'Unknown AI';
-}
-
-// Update badge with detection count
-function updateBadge() {
-  chrome.runtime.sendMessage({
-    action: 'updateBadge',
-    count: detectionsCount
-  }, (response) => {
-    if (chrome.runtime.lastError) {
-      console.log('AI-Shield: Badge update error (normal if popup closed)');
+// Adicionar animações CSS
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
     }
-  });
+
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+
+// Monitorar mudanças no DOM
+function setupMutationObserver() {
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'characterData' || mutation.type === 'childList') {
+                const text = document.body.innerText;
+                const detections = detectSensitiveData(text);
+
+                if (detections.length > 0) {
+                    // Atualizar contador
+                    chrome.storage.local.get(['detectionCount'], (result) => {
+                        const currentCount = result.detectionCount || 0;
+                        const newCount = currentCount + detections.length;
+
+                        chrome.storage.local.set({
+                            detectionCount: newCount
+                        }, () => {
+                            // Notificar popup
+                            try {
+                                chrome.runtime.sendMessage({
+                                    action: 'updateDetectionCount',
+                                    count: newCount
+                                });
+                            } catch (e) {
+                                // Popup não está aberto
+                            }
+                        });
+                    });
+
+                    // Mostrar alerta para o primeiro tipo detectado
+                    showAlert(detections[0].type);
+
+                    // Enviar para backend
+                    sendDetectionToBackend(detections);
+                }
+            }
+        });
+    });
+
+    observer.observe(document.body, {
+        characterData: true,
+        childList: true,
+        subtree: true,
+        characterDataOldValue: false
+    });
 }
 
-// Listen for messages from popup
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'getCount') {
-    sendResponse({ count: detectionsCount });
-  }
-  if (request.action === 'resetCount') {
-    detectionsCount = 0;
-    sendResponse({ success: true });
-  }
-});
+// Função para enviar detecções para o backend
+function sendDetectionToBackend(detections) {
+    chrome.storage.local.get(['companyId', 'userId'], (result) => {
+        const companyId = result.companyId || 'default-company';
+        const userId = result.userId || 'default-user';
 
-console.log('AI-Shield: Content script loaded');
+        const backendUrl = 'https://ai-shield-backend-production.up.railway.app';
+
+        detections.forEach(detection => {
+            fetch(`${backendUrl}/api/detections`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    companyId: companyId,
+                    userId: userId,
+                    detectionType: detection.type,
+                    detectionValue: detection.value,
+                    timestamp: detection.timestamp,
+                    url: window.location.href
+                })
+            })
+            .catch(error => {
+                console.error('Error sending detection to backend:', error);
+            });
+        });
+    });
+}
+
+// Iniciar monitoramento
+setupMutationObserver();
+
+console.log('AI-Shield Content Script loaded and monitoring active');
