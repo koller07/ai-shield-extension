@@ -1,129 +1,149 @@
-// Elementos do DOM
-const detectionCountElement = document.getElementById('detectionCount');
-const companyIdInput = document.getElementById('companyId');
-const userIdInput = document.getElementById('userId');
+// ============================================
+// IA SHIELD - POPUP SCRIPT
+// Manages extension configuration and stats
+// By Koller Group
+// ============================================
+
+// DOM Elements
+const confirmedCountEl = document.getElementById('confirmedCount');
+const suspiciousCountEl = document.getElementById('suspiciousCount');
+const userNameInput = document.getElementById('userName');
+const userEmailInput = document.getElementById('userEmail');
+const apiKeyInput = document.getElementById('apiKey');
 const saveBtn = document.getElementById('saveBtn');
 const resetBtn = document.getElementById('resetBtn');
 const editBtn = document.getElementById('editBtn');
 const configSection = document.getElementById('configSection');
 const displaySection = document.getElementById('displaySection');
-const displayCompanyId = document.getElementById('displayCompanyId');
-const displayUserId = document.getElementById('displayUserId');
+const displayUserName = document.getElementById('displayUserName');
+const displayUserEmail = document.getElementById('displayUserEmail');
 
-// Carregar dados salvos ao abrir o popup
+// Load data on popup open
 document.addEventListener('DOMContentLoaded', () => {
     loadSavedData();
-    updateDetectionCount();
+    updateCounts();
 });
 
-// Carregar dados salvos do localStorage
+// Load saved configuration
 function loadSavedData() {
-    chrome.storage.local.get(['companyId', 'userId', 'detectionCount'], (result) => {
-        const companyId = result.companyId || '';
-        const userId = result.userId || '';
+    chrome.storage.local.get(['apiKey', 'userName', 'userEmail', 'confirmedCount', 'suspiciousCount'], (result) => {
+        const { apiKey, userName, userEmail } = result;
 
-        if (companyId && userId) {
-            // Mostrar modo de exibição
-            displayCompanyId.textContent = companyId;
-            displayUserId.textContent = userId;
+        if (apiKey && userEmail) {
+            // Show display mode
+            displayUserName.textContent = userName || userEmail;
+            displayUserEmail.textContent = userEmail;
             configSection.style.display = 'none';
             displaySection.style.display = 'block';
         } else {
-            // Mostrar modo de configuração
+            // Show configuration mode
             configSection.style.display = 'block';
             displaySection.style.display = 'none';
-            if (companyId) companyIdInput.value = companyId;
-            if (userId) userIdInput.value = userId;
+            if (userName) userNameInput.value = userName;
+            if (userEmail) userEmailInput.value = userEmail;
+            if (apiKey) apiKeyInput.value = apiKey;
         }
 
-        // Atualizar contador
-        const count = result.detectionCount || 0;
-        detectionCountElement.textContent = count;
+        // Update counters
+        confirmedCountEl.textContent = result.confirmedCount || 0;
+        suspiciousCountEl.textContent = result.suspiciousCount || 0;
     });
 }
 
-// Atualizar contador de detecções
-function updateDetectionCount() {
-    chrome.storage.local.get(['detectionCount'], (result) => {
-        const count = result.detectionCount || 0;
-        detectionCountElement.textContent = count;
+// Update detection counters
+function updateCounts() {
+    chrome.storage.local.get(['confirmedCount', 'suspiciousCount'], (result) => {
+        confirmedCountEl.textContent = result.confirmedCount || 0;
+        suspiciousCountEl.textContent = result.suspiciousCount || 0;
     });
 }
 
-// Salvar configuração
+// Save configuration
 saveBtn.addEventListener('click', () => {
-    const companyId = companyIdInput.value.trim();
-    const userId = userIdInput.value.trim();
+    const userName = userNameInput.value.trim();
+    const userEmail = userEmailInput.value.trim();
+    const apiKey = apiKeyInput.value.trim();
 
-    if (!companyId || !userId) {
-        alert('Please fill in both Company ID and User ID');
+    // Validation
+    if (!userName || !userEmail || !apiKey) {
+        alert('Please fill in all fields');
         return;
     }
 
-    // Salvar no localStorage
+    if (!isValidEmail(userEmail)) {
+        alert('Please enter a valid email address');
+        return;
+    }
+
+    if (!apiKey.startsWith('sk_')) {
+        alert('Invalid API Key format. It should start with "sk_"');
+        return;
+    }
+
+    // Save to storage
     chrome.storage.local.set({
-        companyId: companyId,
-        userId: userId
+        userName: userName,
+        userEmail: userEmail,
+        apiKey: apiKey,
+        registered: false // Will register on first detection
     }, () => {
-        // Enviar para backend
-        sendConfigToBackend(companyId, userId);
+        // Update UI
+        loadSavedData();
         
-        // Atualizar UI
-        loadSavedData();
+        // Show success message
+        saveBtn.textContent = '✓ Saved!';
+        saveBtn.style.background = '#00ff88';
+        
+        setTimeout(() => {
+            saveBtn.textContent = 'Save & Activate';
+            saveBtn.style.background = '';
+        }, 2000);
     });
 });
 
-// Resetar configuração
+// Reset configuration
 resetBtn.addEventListener('click', () => {
-    companyIdInput.value = '';
-    userIdInput.value = '';
-    chrome.storage.local.set({
-        companyId: '',
-        userId: ''
-    }, () => {
-        loadSavedData();
-    });
-});
-
-// Editar configuração
-editBtn.addEventListener('click', () => {
-    configSection.style.display = 'block';
-    displaySection.style.display = 'none';
-    companyIdInput.value = displayCompanyId.textContent;
-    userIdInput.value = displayUserId.textContent;
-});
-
-// Enviar configuração para o backend
-function sendConfigToBackend(companyId, userId) {
-    const backendUrl = 'https://ai-shield-backend-production.up.railway.app';
-    
-    fetch(`${backendUrl}/api/companies`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            companyId: companyId,
-            companyName: companyId,
-            userId: userId,
-            userName: userId
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Configuration saved to backend:', data);
-    })
-    .catch(error => {
-        console.error('Error sending configuration to backend:', error);
-    });
-}
-
-// Ouvir mensagens do content.js
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'updateDetectionCount') {
-        updateDetectionCount();
+    if (confirm('Are you sure you want to clear all configuration?')) {
+        userNameInput.value = '';
+        userEmailInput.value = '';
+        apiKeyInput.value = '';
+        
+        chrome.storage.local.set({
+            userName: '',
+            userEmail: '',
+            apiKey: '',
+            registered: false
+        }, () => {
+            loadSavedData();
+        });
     }
 });
 
-// Atualizar contador a cada 2 segundos
-setInterval(updateDetectionCount, 2000);
+// Edit configuration
+editBtn.addEventListener('click', () => {
+    configSection.style.display = 'block';
+    displaySection.style.display = 'none';
+    userNameInput.value = displayUserName.textContent;
+    userEmailInput.value = displayUserEmail.textContent;
+    
+    chrome.storage.local.get(['apiKey'], (result) => {
+        apiKeyInput.value = result.apiKey || '';
+    });
+});
+
+// Listen for updates from content script
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'updateCounts') {
+        confirmedCountEl.textContent = request.confirmed;
+        suspiciousCountEl.textContent = request.suspicious;
+    }
+});
+
+// Auto-update counters every 2 seconds
+setInterval(updateCounts, 2000);
+
+// Email validation
+function isValidEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
