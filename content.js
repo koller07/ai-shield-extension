@@ -1,10 +1,22 @@
 // ============================================
-// IA SHIELD - CONTENT SCRIPT
-// Detects sensitive data in AI platforms
+// IA SHIELD - CONTENT SCRIPT V2.1
+// Fixed: Duplicate detections & alert bugs
 // By Koller Group
 // ============================================
 
 const BACKEND_URL = 'https://ai-shield-backend-production.up.railway.app';
+
+// Cache to prevent duplicate detections
+const detectionCache = new Set();
+const CACHE_DURATION = 60000; // 1 minute
+
+// Cooldown for alerts
+let lastAlertTime = 0;
+const ALERT_COOLDOWN = 2000; // 2 seconds between alerts
+
+// Debounce timer
+let debounceTimer = null;
+const DEBOUNCE_DELAY = 1000; // Wait 1 second after user stops typing
 
 // Sensitive data patterns with confidence levels
 const sensitivePatterns = {
@@ -52,7 +64,7 @@ const sensitivePatterns = {
         type: 'EMAIL'
     },
     
-    // Keywords that suggest sensitive content
+    // Keywords
     medicalKeywords: {
         pattern: /\b(diagnosis|medical record|patient|prescription|health condition)\b/gi,
         confidence: 'suspicious',
@@ -70,20 +82,50 @@ const sensitivePatterns = {
     }
 };
 
+// Create unique hash for detection (to prevent duplicates)
+function createDetectionHash(type, value) {
+    return `${type}-${value.toLowerCase().replace(/\s/g, '')}`;
+}
+
+// Check if detection is in cache
+function isInCache(hash) {
+    return detectionCache.has(hash);
+}
+
+// Add to cache with auto-expiry
+function addToCache(hash) {
+    detectionCache.add(hash);
+    
+    // Remove from cache after duration
+    setTimeout(() => {
+        detectionCache.delete(hash);
+    }, CACHE_DURATION);
+}
+
 // Detect sensitive data in text
 function detectSensitiveData(text) {
     const detections = [];
+    const seenInThisRun = new Set();
     
     for (const [key, config] of Object.entries(sensitivePatterns)) {
         const matches = text.match(config.pattern);
         if (matches) {
             matches.forEach(match => {
-                detections.push({
-                    type: config.type,
-                    confidence: config.confidence,
-                    value: match,
-                    timestamp: new Date().toISOString()
-                });
+                const hash = createDetectionHash(config.type, match);
+                
+                // Skip if already detected in this run or in cache
+                if (!seenInThisRun.has(hash) && !isInCache(hash)) {
+                    seenInThisRun.add(hash);
+                    addToCache(hash);
+                    
+                    detections.push({
+                        type: config.type,
+                        confidence: config.confidence,
+                        value: match,
+                        timestamp: new Date().toISOString(),
+                        hash: hash
+                    });
+                }
             });
         }
     }
@@ -91,8 +133,18 @@ function detectSensitiveData(text) {
     return detections;
 }
 
-// Show visual alert
+// Show visual alert (with cooldown)
 function showAlert(detectionType, confidence) {
+    const now = Date.now();
+    
+    // Check cooldown
+    if (now - lastAlertTime < ALERT_COOLDOWN) {
+        return; // Skip this alert
+    }
+    
+    lastAlertTime = now;
+    
+    // Remove existing alert
     const existingAlert = document.getElementById('ia-shield-alert');
     if (existingAlert) {
         existingAlert.remove();
@@ -117,13 +169,15 @@ function showAlert(detectionType, confidence) {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 14px;
         font-weight: 600;
-        z-index: 999999;
+        z-index: 2147483647;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
         display: flex;
         align-items: center;
         gap: 12px;
-        animation: slideIn 0.3s ease-out;
         min-width: 320px;
+        opacity: 0;
+        transform: translateX(400px);
+        transition: all 0.3s ease-out;
     `;
 
     alert.innerHTML = `
@@ -136,24 +190,23 @@ function showAlert(detectionType, confidence) {
 
     document.body.appendChild(alert);
 
+    // Trigger animation
     setTimeout(() => {
-        alert.style.animation = 'slideOut 0.3s ease-out';
-        setTimeout(() => alert.remove(), 300);
+        alert.style.opacity = '1';
+        alert.style.transform = 'translateX(0)';
+    }, 10);
+
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        alert.style.opacity = '0';
+        alert.style.transform = 'translateX(400px)';
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, 300);
     }, 4000);
 }
-
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(400px); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(400px); opacity: 0; }
-    }
-`;
-document.head.appendChild(style);
 
 function getAIPlatform() {
     const hostname = window.location.hostname;
@@ -235,39 +288,57 @@ function updateCounters(detections) {
     });
 }
 
-function setupMutationObserver() {
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'characterData' || mutation.type === 'childList') {
-                const text = document.body.innerText;
-                const detections = detectSensitiveData(text);
+// Process detections (called after debounce)
+async function processDetections() {
+    const text = document.body.innerText;
+    const detections = detectSensitiveData(text);
 
-                if (detections.length > 0) {
-                    chrome.storage.local.get(['apiKey', 'userName', 'userEmail', 'registered'], async (result) => {
-                        const { apiKey, userName, userEmail, registered } = result;
-                        
-                        if (!apiKey || !userEmail) {
-                            console.log('IA Shield: Not configured. Please open extension popup.');
-                            return;
-                        }
-                        
-                        if (!registered) {
-                            const success = await registerUser(apiKey, userName, userEmail);
-                            if (success) {
-                                chrome.storage.local.set({ registered: true });
-                            }
-                        }
-                        
-                        showAlert(detections[0].type, detections[0].confidence);
-                        updateCounters(detections);
-                        
-                        detections.forEach(detection => {
-                            sendDetectionToBackend(detection, apiKey, userEmail);
-                        });
-                    });
+    if (detections.length > 0) {
+        // Get user credentials
+        chrome.storage.local.get(['apiKey', 'userName', 'userEmail', 'registered'], async (result) => {
+            const { apiKey, userName, userEmail, registered } = result;
+            
+            if (!apiKey || !userEmail) {
+                console.log('IA Shield: Not configured. Please open extension popup.');
+                return;
+            }
+            
+            // Register user if not registered yet
+            if (!registered) {
+                const success = await registerUser(apiKey, userName, userEmail);
+                if (success) {
+                    chrome.storage.local.set({ registered: true });
                 }
             }
+            
+            // Show alert for first detection (with cooldown)
+            if (detections.length > 0) {
+                showAlert(detections[0].type, detections[0].confidence);
+            }
+            
+            // Update counters
+            updateCounters(detections);
+            
+            // Send to backend
+            for (const detection of detections) {
+                await sendDetectionToBackend(detection, apiKey, userEmail);
+            }
         });
+    }
+}
+
+// Monitor DOM changes with debounce
+function setupMutationObserver() {
+    const observer = new MutationObserver((mutations) => {
+        // Clear previous timer
+        if (debounceTimer) {
+            clearTimeout(debounceTimer);
+        }
+        
+        // Set new timer
+        debounceTimer = setTimeout(() => {
+            processDetections();
+        }, DEBOUNCE_DELAY);
     });
 
     observer.observe(document.body, {
@@ -277,5 +348,6 @@ function setupMutationObserver() {
     });
 }
 
-console.log('✅ IA Shield: Monitoring active on', getAIPlatform());
+// Initialize
+console.log('✅ IA Shield v2.1: Monitoring active on', getAIPlatform());
 setupMutationObserver();
