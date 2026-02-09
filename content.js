@@ -1,40 +1,86 @@
-// Padrões de detecção de dados sensíveis
+// ============================================
+// IA SHIELD - CONTENT SCRIPT
+// Detects sensitive data in AI platforms
+// By Koller Group
+// ============================================
+
+const BACKEND_URL = 'https://ai-shield-backend-production.up.railway.app';
+
+// Sensitive data patterns with confidence levels
 const sensitivePatterns = {
-    // CPF (Brasil) - formato: 123.456.789-00 ou 12345678900
-    cpf: /(\d{3}\.\d{3}\.\d{3}-\d{2}|\d{11})/g,
+    // HIGH CONFIDENCE (CONFIRMED) - Strong patterns
+    cpf: {
+        pattern: /\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/g,
+        confidence: 'confirmed',
+        type: 'CPF'
+    },
+    cnpj: {
+        pattern: /\b\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\b/g,
+        confidence: 'confirmed',
+        type: 'CNPJ'
+    },
+    creditCard: {
+        pattern: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g,
+        confidence: 'confirmed',
+        type: 'CREDIT_CARD'
+    },
+    iban: {
+        pattern: /\b[A-Z]{2}\d{2}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{2}\b/g,
+        confidence: 'confirmed',
+        type: 'IBAN'
+    },
+    ssn: {
+        pattern: /\b\d{3}-\d{2}-\d{4}\b/g,
+        confidence: 'confirmed',
+        type: 'SSN'
+    },
     
-    // CNPJ (Brasil) - formato: 12.345.678/0001-90 ou 12345678000190
-    cnpj: /(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}|\d{14})/g,
+    // MEDIUM CONFIDENCE (SUSPICIOUS) - Could be false positives
+    nif: {
+        pattern: /\b\d{9}\b/g,
+        confidence: 'suspicious',
+        type: 'NIF'
+    },
+    phone: {
+        pattern: /(\+\d{1,3}[\s-]?)?\(?\d{2,3}\)?[\s-]?\d{4,5}[\s-]?\d{4}\b/g,
+        confidence: 'suspicious',
+        type: 'PHONE'
+    },
+    email: {
+        pattern: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,
+        confidence: 'suspicious',
+        type: 'EMAIL'
+    },
     
-    // NIF (Portugal) - formato: 123456789
-    nif: /\b\d{9}\b/g,
-    
-    // IBAN - formato: PT50 0035 1234 5678 9012 3456 78
-    iban: /[A-Z]{2}\d{2}\s?\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\s?\d{2}/g,
-    
-    // Cartão de Crédito - formato: 4532 1234 5678 9010
-    creditCard: /\b\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\b/g,
-    
-    // Email corporativo
-    email: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,
-    
-    // Telefone - formato: +55 11 98765-4321 ou 11 98765-4321
-    phone: /(\+\d{1,3}\s?)?\(\d{2,3}\)\s?\d{4,5}-\d{4}|\+\d{1,3}\s?\d{2,3}\s?\d{4,5}\s?\d{4}/g,
-    
-    // Palavras-chave sensíveis
-    keywords: /\b(confidential|secret|private|password|token|api_key|segredo|confidencial|privado|senha|token|chave|diagnóstico|diagnóstico médico|patient|paciente|medical|médico)\b/gi
+    // Keywords that suggest sensitive content
+    medicalKeywords: {
+        pattern: /\b(diagnosis|medical record|patient|prescription|health condition)\b/gi,
+        confidence: 'suspicious',
+        type: 'MEDICAL_DATA'
+    },
+    financialKeywords: {
+        pattern: /\b(salary|income|bank account|financial statement|tax return)\b/gi,
+        confidence: 'suspicious',
+        type: 'FINANCIAL_DATA'
+    },
+    confidentialKeywords: {
+        pattern: /\b(confidential|secret|private|password|api[_\s]?key|token)\b/gi,
+        confidence: 'suspicious',
+        type: 'CONFIDENTIAL'
+    }
 };
 
-// Função para detectar dados sensíveis
+// Detect sensitive data in text
 function detectSensitiveData(text) {
     const detections = [];
     
-    for (const [type, pattern] of Object.entries(sensitivePatterns)) {
-        const matches = text.match(pattern);
+    for (const [key, config] of Object.entries(sensitivePatterns)) {
+        const matches = text.match(config.pattern);
         if (matches) {
             matches.forEach(match => {
                 detections.push({
-                    type: type.toUpperCase(),
+                    type: config.type,
+                    confidence: config.confidence,
                     value: match,
                     timestamp: new Date().toISOString()
                 });
@@ -45,84 +91,150 @@ function detectSensitiveData(text) {
     return detections;
 }
 
-// Função para mostrar alerta visual
-function showAlert(detectionType) {
-    // Remover alerta anterior se existir
-    const existingAlert = document.getElementById('ai-shield-alert');
+// Show visual alert
+function showAlert(detectionType, confidence) {
+    const existingAlert = document.getElementById('ia-shield-alert');
     if (existingAlert) {
         existingAlert.remove();
     }
 
-    // Criar novo alerta
     const alert = document.createElement('div');
-    alert.id = 'ai-shield-alert';
+    alert.id = 'ia-shield-alert';
+    
+    const isConfirmed = confidence === 'confirmed';
+    const bgColor = isConfirmed ? '#dc2626' : '#f59e0b';
+    const icon = isConfirmed ? '🔴' : '⚠️';
+    const title = isConfirmed ? 'SENSITIVE DATA DETECTED' : 'POSSIBLE SENSITIVE DATA';
+    
     alert.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
-        background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+        background: linear-gradient(135deg, ${bgColor} 0%, ${isConfirmed ? '#991b1b' : '#d97706'} 100%);
         color: white;
         padding: 16px 20px;
-        border-radius: 8px;
+        border-radius: 12px;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 14px;
         font-weight: 600;
         z-index: 999999;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
         animation: slideIn 0.3s ease-out;
+        min-width: 320px;
     `;
 
-    // Adicionar ícone
-    const icon = document.createElement('span');
-    icon.textContent = '⚠️';
-    icon.style.fontSize = '18px';
+    alert.innerHTML = `
+        <span style="font-size: 20px;">${icon}</span>
+        <div>
+            <div style="font-size: 13px; font-weight: 700; margin-bottom: 4px;">${title}</div>
+            <div style="font-size: 12px; opacity: 0.9;">${detectionType}</div>
+        </div>
+    `;
 
-    // Adicionar texto
-    const text = document.createElement('span');
-    text.textContent = `SENSITIVE DATA DETECTED: ${detectionType}`;
-
-    alert.appendChild(icon);
-    alert.appendChild(text);
     document.body.appendChild(alert);
 
-    // Remover alerta após 4 segundos
     setTimeout(() => {
         alert.style.animation = 'slideOut 0.3s ease-out';
         setTimeout(() => alert.remove(), 300);
     }, 4000);
 }
 
-// Adicionar animações CSS
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
-        from {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
+        from { transform: translateX(400px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
     }
-
     @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(400px);
-            opacity: 0;
-        }
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(400px); opacity: 0; }
     }
 `;
 document.head.appendChild(style);
 
-// Monitorar mudanças no DOM
+function getAIPlatform() {
+    const hostname = window.location.hostname;
+    if (hostname.includes('chatgpt.com') || hostname.includes('openai.com')) return 'ChatGPT';
+    if (hostname.includes('claude.ai')) return 'Claude';
+    if (hostname.includes('gemini.google.com')) return 'Gemini';
+    if (hostname.includes('copilot.microsoft.com')) return 'Copilot';
+    if (hostname.includes('perplexity.ai')) return 'Perplexity';
+    if (hostname.includes('mistral.ai')) return 'Mistral';
+    if (hostname.includes('huggingface.co')) return 'HuggingFace';
+    if (hostname.includes('groq.com')) return 'Groq';
+    return 'Unknown AI Platform';
+}
+
+async function registerUser(apiKey, userName, userEmail) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/users/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey
+            },
+            body: JSON.stringify({ userName, userEmail })
+        });
+        
+        const data = await response.json();
+        return data.success;
+    } catch (error) {
+        console.error('IA Shield: Error registering user:', error);
+        return false;
+    }
+}
+
+async function sendDetectionToBackend(detection, apiKey, userEmail) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/detections`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey
+            },
+            body: JSON.stringify({
+                userEmail: userEmail,
+                detectionType: detection.type,
+                confidenceLevel: detection.confidence,
+                aiPlatform: getAIPlatform(),
+                url: window.location.href,
+                detectedValue: detection.value
+            })
+        });
+        
+        return response.ok;
+    } catch (error) {
+        console.error('IA Shield: Error sending detection:', error);
+        return false;
+    }
+}
+
+function updateCounters(detections) {
+    chrome.storage.local.get(['confirmedCount', 'suspiciousCount'], (result) => {
+        const confirmed = detections.filter(d => d.confidence === 'confirmed').length;
+        const suspicious = detections.filter(d => d.confidence === 'suspicious').length;
+        
+        const newConfirmed = (result.confirmedCount || 0) + confirmed;
+        const newSuspicious = (result.suspiciousCount || 0) + suspicious;
+        
+        chrome.storage.local.set({
+            confirmedCount: newConfirmed,
+            suspiciousCount: newSuspicious
+        }, () => {
+            try {
+                chrome.runtime.sendMessage({
+                    action: 'updateCounts',
+                    confirmed: newConfirmed,
+                    suspicious: newSuspicious
+                });
+            } catch (e) {}
+        });
+    });
+}
+
 function setupMutationObserver() {
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
@@ -131,31 +243,28 @@ function setupMutationObserver() {
                 const detections = detectSensitiveData(text);
 
                 if (detections.length > 0) {
-                    // Atualizar contador
-                    chrome.storage.local.get(['detectionCount'], (result) => {
-                        const currentCount = result.detectionCount || 0;
-                        const newCount = currentCount + detections.length;
-
-                        chrome.storage.local.set({
-                            detectionCount: newCount
-                        }, () => {
-                            // Notificar popup
-                            try {
-                                chrome.runtime.sendMessage({
-                                    action: 'updateDetectionCount',
-                                    count: newCount
-                                });
-                            } catch (e) {
-                                // Popup não está aberto
+                    chrome.storage.local.get(['apiKey', 'userName', 'userEmail', 'registered'], async (result) => {
+                        const { apiKey, userName, userEmail, registered } = result;
+                        
+                        if (!apiKey || !userEmail) {
+                            console.log('IA Shield: Not configured. Please open extension popup.');
+                            return;
+                        }
+                        
+                        if (!registered) {
+                            const success = await registerUser(apiKey, userName, userEmail);
+                            if (success) {
+                                chrome.storage.local.set({ registered: true });
                             }
+                        }
+                        
+                        showAlert(detections[0].type, detections[0].confidence);
+                        updateCounters(detections);
+                        
+                        detections.forEach(detection => {
+                            sendDetectionToBackend(detection, apiKey, userEmail);
                         });
                     });
-
-                    // Mostrar alerta para o primeiro tipo detectado
-                    showAlert(detections[0].type);
-
-                    // Enviar para backend
-                    sendDetectionToBackend(detections);
                 }
             }
         });
@@ -164,42 +273,9 @@ function setupMutationObserver() {
     observer.observe(document.body, {
         characterData: true,
         childList: true,
-        subtree: true,
-        characterDataOldValue: false
+        subtree: true
     });
 }
 
-// Função para enviar detecções para o backend
-function sendDetectionToBackend(detections) {
-    chrome.storage.local.get(['companyId', 'userId'], (result) => {
-        const companyId = result.companyId || 'default-company';
-        const userId = result.userId || 'default-user';
-
-        const backendUrl = 'https://ai-shield-backend-production.up.railway.app';
-
-        detections.forEach(detection => {
-            fetch(`${backendUrl}/api/detections`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    companyId: companyId,
-                    userId: userId,
-                    detectionType: detection.type,
-                    detectionValue: detection.value,
-                    timestamp: detection.timestamp,
-                    url: window.location.href
-                })
-            })
-            .catch(error => {
-                console.error('Error sending detection to backend:', error);
-            });
-        });
-    });
-}
-
-// Iniciar monitoramento
+console.log('✅ IA Shield: Monitoring active on', getAIPlatform());
 setupMutationObserver();
-
-console.log('AI-Shield Content Script loaded and monitoring active');
