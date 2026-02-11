@@ -1,26 +1,21 @@
 // ============================================
-// IA SHIELD - CONTENT SCRIPT V2.1
-// Fixed: Duplicate detections & alert bugs
+// IA SHIELD - CONTENT SCRIPT V2.2
+// ULTRA SIMPLIFIED - Only detects user input
 // By Koller Group
 // ============================================
 
 const BACKEND_URL = 'https://ai-shield-backend-production.up.railway.app';
 
-// Cache to prevent duplicate detections
-const detectionCache = new Set();
-const CACHE_DURATION = 60000; // 1 minute
+// Track what has already been checked to avoid re-checking
+const checkedTexts = new Set();
 
-// Cooldown for alerts
-let lastAlertTime = 0;
-const ALERT_COOLDOWN = 2000; // 2 seconds between alerts
+// Cooldown between checks (prevents spam)
+let lastCheckTime = 0;
+const CHECK_COOLDOWN = 2000; // 2 seconds
 
-// Debounce timer
-let debounceTimer = null;
-const DEBOUNCE_DELAY = 1000; // Wait 1 second after user stops typing
-
-// Sensitive data patterns with confidence levels
+// Sensitive data patterns
 const sensitivePatterns = {
-    // HIGH CONFIDENCE (CONFIRMED) - Strong patterns
+    // CONFIRMED (Red Alert)
     cpf: {
         pattern: /\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/g,
         confidence: 'confirmed',
@@ -47,11 +42,11 @@ const sensitivePatterns = {
         type: 'SSN'
     },
     
-    // MEDIUM CONFIDENCE (SUSPICIOUS) - Could be false positives
-    nif: {
-        pattern: /\b\d{9}\b/g,
+    // SUSPICIOUS (Yellow Alert)
+    cpfUnformatted: {
+        pattern: /\b\d{11}\b/g,
         confidence: 'suspicious',
-        type: 'NIF'
+        type: 'POSSIBLE_CPF'
     },
     phone: {
         pattern: /(\+\d{1,3}[\s-]?)?\(?\d{2,3}\)?[\s-]?\d{4,5}[\s-]?\d{4}\b/g,
@@ -62,89 +57,51 @@ const sensitivePatterns = {
         pattern: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,
         confidence: 'suspicious',
         type: 'EMAIL'
-    },
-    
-    // Keywords
-    medicalKeywords: {
-        pattern: /\b(diagnosis|medical record|patient|prescription|health condition)\b/gi,
-        confidence: 'suspicious',
-        type: 'MEDICAL_DATA'
-    },
-    financialKeywords: {
-        pattern: /\b(salary|income|bank account|financial statement|tax return)\b/gi,
-        confidence: 'suspicious',
-        type: 'FINANCIAL_DATA'
-    },
-    confidentialKeywords: {
-        pattern: /\b(confidential|secret|private|password|api[_\s]?key|token)\b/gi,
-        confidence: 'suspicious',
-        type: 'CONFIDENTIAL'
     }
 };
 
-// Create unique hash for detection (to prevent duplicates)
-function createDetectionHash(type, value) {
-    return `${type}-${value.toLowerCase().replace(/\s/g, '')}`;
-}
-
-// Check if detection is in cache
-function isInCache(hash) {
-    return detectionCache.has(hash);
-}
-
-// Add to cache with auto-expiry
-function addToCache(hash) {
-    detectionCache.add(hash);
+// Simple detection function
+function detectInText(text) {
+    if (!text || text.length < 5) return null;
     
-    // Remove from cache after duration
-    setTimeout(() => {
-        detectionCache.delete(hash);
-    }, CACHE_DURATION);
-}
-
-// Detect sensitive data in text
-function detectSensitiveData(text) {
-    const detections = [];
-    const seenInThisRun = new Set();
+    // Skip if already checked this exact text
+    const textHash = text.toLowerCase().replace(/\s/g, '');
+    if (checkedTexts.has(textHash)) {
+        return null;
+    }
     
+    // Check cooldown
+    const now = Date.now();
+    if (now - lastCheckTime < CHECK_COOLDOWN) {
+        return null;
+    }
+    
+    // Find first match
     for (const [key, config] of Object.entries(sensitivePatterns)) {
-        const matches = text.match(config.pattern);
-        if (matches) {
-            matches.forEach(match => {
-                const hash = createDetectionHash(config.type, match);
-                
-                // Skip if already detected in this run or in cache
-                if (!seenInThisRun.has(hash) && !isInCache(hash)) {
-                    seenInThisRun.add(hash);
-                    addToCache(hash);
-                    
-                    detections.push({
-                        type: config.type,
-                        confidence: config.confidence,
-                        value: match,
-                        timestamp: new Date().toISOString(),
-                        hash: hash
-                    });
-                }
-            });
+        const match = text.match(config.pattern);
+        if (match && match.length > 0) {
+            // Mark as checked
+            checkedTexts.add(textHash);
+            lastCheckTime = now;
+            
+            // Auto-clean cache after 5 minutes
+            setTimeout(() => {
+                checkedTexts.delete(textHash);
+            }, 300000);
+            
+            return {
+                type: config.type,
+                confidence: config.confidence,
+                value: match[0]
+            };
         }
     }
     
-    return detections;
+    return null;
 }
 
-// Show visual alert (with cooldown)
+// Show alert
 function showAlert(detectionType, confidence) {
-    const now = Date.now();
-    
-    // Check cooldown
-    if (now - lastAlertTime < ALERT_COOLDOWN) {
-        return; // Skip this alert
-    }
-    
-    lastAlertTime = now;
-    
-    // Remove existing alert
     const existingAlert = document.getElementById('ia-shield-alert');
     if (existingAlert) {
         existingAlert.remove();
@@ -175,9 +132,6 @@ function showAlert(detectionType, confidence) {
         align-items: center;
         gap: 12px;
         min-width: 320px;
-        opacity: 0;
-        transform: translateX(400px);
-        transition: all 0.3s ease-out;
     `;
 
     alert.innerHTML = `
@@ -190,24 +144,14 @@ function showAlert(detectionType, confidence) {
 
     document.body.appendChild(alert);
 
-    // Trigger animation
     setTimeout(() => {
-        alert.style.opacity = '1';
-        alert.style.transform = 'translateX(0)';
-    }, 10);
-
-    // Auto-remove after 4 seconds
-    setTimeout(() => {
-        alert.style.opacity = '0';
-        alert.style.transform = 'translateX(400px)';
-        setTimeout(() => {
-            if (alert.parentNode) {
-                alert.remove();
-            }
-        }, 300);
+        if (alert.parentNode) {
+            alert.remove();
+        }
     }, 4000);
 }
 
+// Get AI platform
 function getAIPlatform() {
     const hostname = window.location.hostname;
     if (hostname.includes('chatgpt.com') || hostname.includes('openai.com')) return 'ChatGPT';
@@ -215,12 +159,10 @@ function getAIPlatform() {
     if (hostname.includes('gemini.google.com')) return 'Gemini';
     if (hostname.includes('copilot.microsoft.com')) return 'Copilot';
     if (hostname.includes('perplexity.ai')) return 'Perplexity';
-    if (hostname.includes('mistral.ai')) return 'Mistral';
-    if (hostname.includes('huggingface.co')) return 'HuggingFace';
-    if (hostname.includes('groq.com')) return 'Groq';
-    return 'Unknown AI Platform';
+    return 'AI Platform';
 }
 
+// Register user
 async function registerUser(apiKey, userName, userEmail) {
     try {
         const response = await fetch(`${BACKEND_URL}/api/users/register`, {
@@ -231,18 +173,16 @@ async function registerUser(apiKey, userName, userEmail) {
             },
             body: JSON.stringify({ userName, userEmail })
         });
-        
-        const data = await response.json();
-        return data.success;
+        return (await response.json()).success;
     } catch (error) {
-        console.error('IA Shield: Error registering user:', error);
         return false;
     }
 }
 
-async function sendDetectionToBackend(detection, apiKey, userEmail) {
+// Send to backend
+async function sendToBackend(detection, apiKey, userEmail) {
     try {
-        const response = await fetch(`${BACKEND_URL}/api/detections`, {
+        await fetch(`${BACKEND_URL}/api/detections`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -257,97 +197,113 @@ async function sendDetectionToBackend(detection, apiKey, userEmail) {
                 detectedValue: detection.value
             })
         });
-        
-        return response.ok;
     } catch (error) {
-        console.error('IA Shield: Error sending detection:', error);
-        return false;
+        console.error('IA Shield: Send error:', error);
     }
 }
 
-function updateCounters(detections) {
+// Update counters
+function updateCounters(confidence) {
     chrome.storage.local.get(['confirmedCount', 'suspiciousCount'], (result) => {
-        const confirmed = detections.filter(d => d.confidence === 'confirmed').length;
-        const suspicious = detections.filter(d => d.confidence === 'suspicious').length;
+        const field = confidence === 'confirmed' ? 'confirmedCount' : 'suspiciousCount';
+        const newValue = (result[field] || 0) + 1;
         
-        const newConfirmed = (result.confirmedCount || 0) + confirmed;
-        const newSuspicious = (result.suspiciousCount || 0) + suspicious;
-        
-        chrome.storage.local.set({
-            confirmedCount: newConfirmed,
-            suspiciousCount: newSuspicious
-        }, () => {
+        chrome.storage.local.set({ [field]: newValue }, () => {
             try {
                 chrome.runtime.sendMessage({
                     action: 'updateCounts',
-                    confirmed: newConfirmed,
-                    suspicious: newSuspicious
+                    confirmed: confidence === 'confirmed' ? newValue : (result.confirmedCount || 0),
+                    suspicious: confidence === 'suspicious' ? newValue : (result.suspiciousCount || 0)
                 });
             } catch (e) {}
         });
     });
 }
 
-// Process detections (called after debounce)
-async function processDetections() {
-    const text = document.body.innerText;
-    const detections = detectSensitiveData(text);
-
-    if (detections.length > 0) {
-        // Get user credentials
-        chrome.storage.local.get(['apiKey', 'userName', 'userEmail', 'registered'], async (result) => {
-            const { apiKey, userName, userEmail, registered } = result;
-            
-            if (!apiKey || !userEmail) {
-                console.log('IA Shield: Not configured. Please open extension popup.');
-                return;
-            }
-            
-            // Register user if not registered yet
-            if (!registered) {
-                const success = await registerUser(apiKey, userName, userEmail);
-                if (success) {
-                    chrome.storage.local.set({ registered: true });
-                }
-            }
-            
-            // Show alert for first detection (with cooldown)
-            if (detections.length > 0) {
-                showAlert(detections[0].type, detections[0].confidence);
-            }
-            
-            // Update counters
-            updateCounters(detections);
-            
-            // Send to backend
-            for (const detection of detections) {
-                await sendDetectionToBackend(detection, apiKey, userEmail);
-            }
-        });
-    }
-}
-
-// Monitor DOM changes with debounce
-function setupMutationObserver() {
-    const observer = new MutationObserver((mutations) => {
-        // Clear previous timer
-        if (debounceTimer) {
-            clearTimeout(debounceTimer);
+// Process detection
+async function processDetection(detection) {
+    if (!detection) return;
+    
+    chrome.storage.local.get(['apiKey', 'userName', 'userEmail', 'registered'], async (result) => {
+        const { apiKey, userName, userEmail, registered } = result;
+        
+        if (!apiKey || !userEmail) {
+            console.log('IA Shield: Not configured');
+            return;
         }
         
-        // Set new timer
-        debounceTimer = setTimeout(() => {
-            processDetections();
-        }, DEBOUNCE_DELAY);
+        // Register user on first detection
+        if (!registered) {
+            const success = await registerUser(apiKey, userName, userEmail);
+            if (success) {
+                chrome.storage.local.set({ registered: true });
+            }
+        }
+        
+        // Show alert
+        showAlert(detection.type, detection.confidence);
+        
+        // Update counter
+        updateCounters(detection.confidence);
+        
+        // Send to backend
+        await sendToBackend(detection, apiKey, userEmail);
     });
+}
 
+// Monitor user input (ONLY user typing, not AI responses)
+function setupInputMonitoring() {
+    // Track all input fields
+    const monitorElement = (element) => {
+        let typingTimer;
+        const TYPING_DELAY = 1500; // Wait 1.5s after user stops typing
+        
+        element.addEventListener('input', (e) => {
+            clearTimeout(typingTimer);
+            
+            typingTimer = setTimeout(() => {
+                const text = element.value || element.textContent || element.innerText;
+                const detection = detectInText(text);
+                if (detection) {
+                    processDetection(detection);
+                }
+            }, TYPING_DELAY);
+        });
+        
+        element.addEventListener('paste', (e) => {
+            setTimeout(() => {
+                const text = element.value || element.textContent || element.innerText;
+                const detection = detectInText(text);
+                if (detection) {
+                    processDetection(detection);
+                }
+            }, 100);
+        });
+    };
+    
+    // Monitor existing inputs
+    document.querySelectorAll('input, textarea, [contenteditable="true"]').forEach(monitorElement);
+    
+    // Monitor new inputs
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === 1) {
+                    if (node.matches('input, textarea, [contenteditable="true"]')) {
+                        monitorElement(node);
+                    }
+                    node.querySelectorAll('input, textarea, [contenteditable="true"]').forEach(monitorElement);
+                }
+            });
+        });
+    });
+    
     observer.observe(document.body, {
-        characterData: true,
         childList: true,
         subtree: true
     });
 }
 
 // Initialize
-console.log('✅ IA Shield v2.1: Monitoring active on', getAIPlatform());
-setupMutationObserver();
+console.log('✅ IA Shield v2.2: Active on', getAIPlatform());
+setupInputMonitoring();
