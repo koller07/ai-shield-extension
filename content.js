@@ -1,6 +1,6 @@
 // ============================================
-// IA SHIELD - CONTENT SCRIPT V2.4
-// Debug version - Shows detailed logs
+// IA SHIELD - CONTENT SCRIPT V2.5 PRODUCTION
+// Detects sensitive data in AI platforms
 // By Koller Group
 // ============================================
 
@@ -64,38 +64,25 @@ const sensitivePatterns = {
 function detectInText(text) {
     if (!text || text.length < 5) return null;
     
-    // Skip if already checked this exact text
     const textHash = text.toLowerCase().replace(/\s/g, '');
     if (checkedTexts.has(textHash)) {
-        console.log('IA Shield: Text already checked (in cache)');
         return null;
     }
     
-    // Check cooldown
     const now = Date.now();
     if (now - lastCheckTime < CHECK_COOLDOWN) {
-        console.log('IA Shield: Cooldown active, skipping check');
         return null;
     }
     
-    // Find first match
     for (const [key, config] of Object.entries(sensitivePatterns)) {
         const match = text.match(config.pattern);
         if (match && match.length > 0) {
-            // Mark as checked
             checkedTexts.add(textHash);
             lastCheckTime = now;
             
-            // Auto-clean cache after 5 minutes
             setTimeout(() => {
                 checkedTexts.delete(textHash);
             }, 300000);
-            
-            console.log('✅ IA Shield: Detection found!', {
-                type: config.type,
-                confidence: config.confidence,
-                value: match[0]
-            });
             
             return {
                 type: config.type,
@@ -150,12 +137,8 @@ function addAnimationStyles() {
 
 // Show alert with smooth animations
 function showAlert(detectionType, confidence) {
-    console.log('🎨 IA Shield: Showing alert -', detectionType, confidence);
-    
-    // Add styles if not already added
     addAnimationStyles();
     
-    // Remove existing alert
     const existingAlert = document.getElementById('ia-shield-alert');
     if (existingAlert) {
         existingAlert.classList.add('ia-shield-alert-exit');
@@ -203,14 +186,12 @@ function showAlert(detectionType, confidence) {
 
     document.body.appendChild(alert);
 
-    // Trigger enter animation
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             alert.classList.add('ia-shield-alert-enter');
         });
     });
 
-    // Auto-remove after 4 seconds with exit animation
     setTimeout(() => {
         alert.classList.remove('ia-shield-alert-enter');
         alert.classList.add('ia-shield-alert-exit');
@@ -235,8 +216,6 @@ function getAIPlatform() {
 
 // Register user
 async function registerUser(apiKey, userName, userEmail) {
-    console.log('📝 IA Shield: Registering user...', { userName, userEmail });
-    
     try {
         const response = await fetch(`${BACKEND_URL}/api/users/register`, {
             method: 'POST',
@@ -246,85 +225,58 @@ async function registerUser(apiKey, userName, userEmail) {
             },
             body: JSON.stringify({ userName, userEmail })
         });
-        
-        const data = await response.json();
-        
-        console.log('📝 IA Shield: Register response:', {
-            status: response.status,
-            success: data.success,
-            data: data
-        });
-        
-        return data.success;
+        return (await response.json()).success;
     } catch (error) {
-        console.error('❌ IA Shield: Register error:', error);
         return false;
     }
 }
 
 // Send to backend
 async function sendToBackend(detection, apiKey, userEmail) {
-    const payload = {
-        userEmail: userEmail,
-        detectionType: detection.type,
-        confidenceLevel: detection.confidence,
-        aiPlatform: getAIPlatform(),
-        url: window.location.href,
-        detectedValue: detection.value
-    };
-    
-    console.log('📤 IA Shield: Sending detection to backend...', payload);
-    
     try {
-        const response = await fetch(`${BACKEND_URL}/api/detections`, {
+        await fetch(`${BACKEND_URL}/api/detections`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'x-api-key': apiKey
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                userEmail: userEmail,
+                detectionType: detection.type,
+                confidenceLevel: detection.confidence,
+                aiPlatform: getAIPlatform(),
+                url: window.location.href,
+                detectedValue: detection.value
+            })
         });
-        
-        const data = await response.json();
-        
-        console.log('📤 IA Shield: Backend response:', {
-            status: response.status,
-            ok: response.ok,
-            data: data
-        });
-        
-        if (!response.ok) {
-            console.error('❌ IA Shield: Backend returned error:', data);
-        } else {
-            console.log('✅ IA Shield: Detection saved successfully!');
-        }
-        
-        return response.ok;
+        return true;
     } catch (error) {
-        console.error('❌ IA Shield: Network error sending detection:', error);
+        console.error('IA Shield: Error sending detection');
         return false;
     }
 }
 
 // Update counters
 function updateCounters(confidence) {
-    console.log('📊 IA Shield: Updating counter -', confidence);
-    
     chrome.storage.local.get(['confirmedCount', 'suspiciousCount'], (result) => {
         const field = confidence === 'confirmed' ? 'confirmedCount' : 'suspiciousCount';
         const newValue = (result[field] || 0) + 1;
         
-        console.log('📊 IA Shield: New counter value:', field, '=', newValue);
-        
         chrome.storage.local.set({ [field]: newValue }, () => {
-            try {
-                chrome.runtime.sendMessage({
-                    action: 'updateCounts',
-                    confirmed: confidence === 'confirmed' ? newValue : (result.confirmedCount || 0),
-                    suspicious: confidence === 'suspicious' ? newValue : (result.suspiciousCount || 0)
-                });
-            } catch (e) {
-                console.log('IA Shield: Popup not open, counter updated locally');
+            if (chrome.runtime?.id) {
+                try {
+                    chrome.runtime.sendMessage({
+                        action: 'updateCounts',
+                        confirmed: confidence === 'confirmed' ? newValue : (result.confirmedCount || 0),
+                        suspicious: confidence === 'suspicious' ? newValue : (result.suspiciousCount || 0)
+                    }, () => {
+                        if (chrome.runtime.lastError) {
+                            // Popup not open, ignore
+                        }
+                    });
+                } catch (e) {
+                    // Extension context invalidated, ignore
+                }
             }
         });
     });
@@ -334,70 +286,37 @@ function updateCounters(confidence) {
 async function processDetection(detection) {
     if (!detection) return;
     
-    console.log('⚙️ IA Shield: Processing detection...', detection);
-    
     chrome.storage.local.get(['apiKey', 'userName', 'userEmail', 'registered'], async (result) => {
         const { apiKey, userName, userEmail, registered } = result;
         
-        console.log('⚙️ IA Shield: User config:', {
-            hasApiKey: !!apiKey,
-            userName: userName,
-            userEmail: userEmail,
-            registered: registered
-        });
-        
         if (!apiKey || !userEmail) {
-            console.error('❌ IA Shield: Not configured! Missing API Key or Email.');
             return;
         }
         
-        // Register user on first detection
         if (!registered) {
-            console.log('📝 IA Shield: First detection, registering user...');
             const success = await registerUser(apiKey, userName, userEmail);
             if (success) {
-                console.log('✅ IA Shield: User registered successfully!');
                 chrome.storage.local.set({ registered: true });
-            } else {
-                console.error('❌ IA Shield: User registration failed!');
             }
-        } else {
-            console.log('✅ IA Shield: User already registered');
         }
         
-        // Show alert
         showAlert(detection.type, detection.confidence);
-        
-        // Update counter
         updateCounters(detection.confidence);
-        
-        // Send to backend
-        console.log('📤 IA Shield: Sending detection to backend...');
-        const sent = await sendToBackend(detection, apiKey, userEmail);
-        
-        if (sent) {
-            console.log('✅ IA Shield: Full flow completed successfully!');
-        } else {
-            console.error('❌ IA Shield: Failed to send detection to backend');
-        }
+        await sendToBackend(detection, apiKey, userEmail);
     });
 }
 
 // Monitor user input (ONLY user typing, not AI responses)
 function setupInputMonitoring() {
-    console.log('👀 IA Shield: Setting up input monitoring...');
-    
-    // Track all input fields
     const monitorElement = (element) => {
         let typingTimer;
-        const TYPING_DELAY = 1500; // Wait 1.5s after user stops typing
+        const TYPING_DELAY = 1500;
         
         element.addEventListener('input', (e) => {
             clearTimeout(typingTimer);
             
             typingTimer = setTimeout(() => {
                 const text = element.value || element.textContent || element.innerText;
-                console.log('🔍 IA Shield: Checking text...', text.substring(0, 50) + '...');
                 const detection = detectInText(text);
                 if (detection) {
                     processDetection(detection);
@@ -408,7 +327,6 @@ function setupInputMonitoring() {
         element.addEventListener('paste', (e) => {
             setTimeout(() => {
                 const text = element.value || element.textContent || element.innerText;
-                console.log('📋 IA Shield: Checking pasted text...', text.substring(0, 50) + '...');
                 const detection = detectInText(text);
                 if (detection) {
                     processDetection(detection);
@@ -417,24 +335,16 @@ function setupInputMonitoring() {
         });
     };
     
-    // Monitor existing inputs
-    const inputs = document.querySelectorAll('input, textarea, [contenteditable="true"]');
-    console.log('👀 IA Shield: Found', inputs.length, 'input fields to monitor');
-    inputs.forEach(monitorElement);
+    document.querySelectorAll('input, textarea, [contenteditable="true"]').forEach(monitorElement);
     
-    // Monitor new inputs
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             mutation.addedNodes.forEach((node) => {
                 if (node.nodeType === 1) {
                     if (node.matches('input, textarea, [contenteditable="true"]')) {
-                        console.log('👀 IA Shield: New input field detected, monitoring...');
                         monitorElement(node);
                     }
-                    node.querySelectorAll('input, textarea, [contenteditable="true"]').forEach(el => {
-                        console.log('👀 IA Shield: New input field detected, monitoring...');
-                        monitorElement(el);
-                    });
+                    node.querySelectorAll('input, textarea, [contenteditable="true"]').forEach(monitorElement);
                 }
             });
         });
@@ -447,6 +357,4 @@ function setupInputMonitoring() {
 }
 
 // Initialize
-console.log('✅ IA Shield v2.4 (DEBUG): Active on', getAIPlatform());
-console.log('📋 IA Shield: Backend URL:', BACKEND_URL);
 setupInputMonitoring();
