@@ -1,9 +1,8 @@
-// ============================================
-// IA SHIELD - POPUP SCRIPT v3.0
-// By Koller Group
-// ============================================
+// AI Shield - popup.js
+// Registra usuário no backend ao salvar configuração
 
-// DOM Elements
+const BACKEND_URL = 'https://ai-shield-backend-production.up.railway.app';
+
 const detectionCountElement = document.getElementById('detectionCount');
 const userNameInput = document.getElementById('userName');
 const userEmailInput = document.getElementById('userEmail');
@@ -17,28 +16,24 @@ const displayUserName = document.getElementById('displayUserName');
 const displayUserEmail = document.getElementById('displayUserEmail');
 const displayApiKey = document.getElementById('displayApiKey');
 
-// Load saved data on popup open
 document.addEventListener('DOMContentLoaded', () => {
     loadSavedData();
     updateDetectionCount();
 });
 
-// Load saved configuration
 function loadSavedData() {
-    chrome.storage.local.get(['userName', 'userEmail', 'apiKey', 'detectionCount'], (result) => {
+    chrome.storage.local.get(['userName', 'userEmail', 'apiKey', 'detectionCount', 'confirmedCount', 'suspiciousCount'], (result) => {
         const userName = result.userName || '';
         const userEmail = result.userEmail || '';
         const apiKey = result.apiKey || '';
 
         if (userName && userEmail && apiKey) {
-            // Show display mode
             displayUserName.textContent = userName;
             displayUserEmail.textContent = userEmail;
-            displayApiKey.textContent = maskApiKey(apiKey);
+            displayApiKey.textContent = apiKey.substring(0, 12) + '...' + apiKey.substring(apiKey.length - 4);
             configSection.style.display = 'none';
             displaySection.style.display = 'block';
         } else {
-            // Show configuration mode
             configSection.style.display = 'block';
             displaySection.style.display = 'none';
             if (userName) userNameInput.value = userName;
@@ -46,147 +41,112 @@ function loadSavedData() {
             if (apiKey) apiKeyInput.value = apiKey;
         }
 
-        // Update counter
-        const count = result.detectionCount || 0;
-        detectionCountElement.textContent = count;
+        detectionCountElement.textContent = result.detectionCount || 0;
+        document.getElementById('confirmedCount').textContent = result.confirmedCount || 0;
+        document.getElementById('suspiciousCount').textContent = result.suspiciousCount || 0;
     });
 }
 
-// Mask API Key for display
-function maskApiKey(key) {
-    if (key.length <= 12) return '••••••••••••';
-    return key.substring(0, 8) + '••••••••' + key.substring(key.length - 4);
-}
-
-// Update detection count
 function updateDetectionCount() {
-    chrome.storage.local.get(['detectionCount'], (result) => {
-        const count = result.detectionCount || 0;
-        detectionCountElement.textContent = count;
+    chrome.storage.local.get(['detectionCount', 'confirmedCount', 'suspiciousCount'], (result) => {
+        detectionCountElement.textContent = result.detectionCount || 0;
+        document.getElementById('confirmedCount').textContent = result.confirmedCount || 0;
+        document.getElementById('suspiciousCount').textContent = result.suspiciousCount || 0;
     });
 }
 
-// Save configuration
-saveBtn.addEventListener('click', async () => {
-    const userName = userNameInput.value.trim();
-    const userEmail = userEmailInput.value.trim();
-    const apiKey = apiKeyInput.value.trim();
-
-    // Validation
-    if (!userName || !userEmail || !apiKey) {
-        alert('Please fill in all fields');
-        return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(userEmail)) {
-        alert('Please enter a valid email address');
-        return;
-    }
-
-    // Validate API Key format (should start with sk_)
-    if (!apiKey.startsWith('sk_')) {
-        const confirm = window.confirm('API Key should start with "sk_". Continue anyway?');
-        if (!confirm) return;
-    }
-
-    // Show loading state
-    saveBtn.textContent = 'Validating...';
-    saveBtn.disabled = true;
-
-    // Test API Key with backend
-    const isValid = await testApiKey(apiKey, userEmail);
-
-    if (isValid) {
-        // Save to storage
-        chrome.storage.local.set({
-            userName: userName,
-            userEmail: userEmail,
-            apiKey: apiKey
-        }, () => {
-            saveBtn.textContent = '✓ Saved';
-            setTimeout(() => {
-                saveBtn.textContent = 'Save Configuration';
-                saveBtn.disabled = false;
-                loadSavedData();
-            }, 1000);
-        });
-    } else {
-        alert('Invalid API Key or connection error. Please check and try again.');
-        saveBtn.textContent = 'Save Configuration';
-        saveBtn.disabled = false;
-    }
-});
-
-// Test API Key with backend
-async function testApiKey(apiKey, userEmail) {
+// REGISTRAR USUÁRIO NO BACKEND
+async function registerUserOnBackend(userName, userEmail, apiKey) {
     try {
-        const backendUrl = 'https://ai-shield-backend-production.up.railway.app';
-        
-        // Try to register/verify user
-        const response = await fetch(`${backendUrl}/api/users/register`, {
+        const response = await fetch(`${BACKEND_URL}/api/users/register`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'x-api-key': apiKey
             },
             body: JSON.stringify({
-                userName: userNameInput.value.trim(),
+                userName: userName,
                 userEmail: userEmail
             })
         });
 
-        if (response.ok) {
-            return true;
-        } else if (response.status === 409) {
-            // User already exists, that's OK
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            console.log('✅ User registered on backend');
             return true;
         } else {
+            console.error('❌ Register failed:', data.error);
             return false;
         }
     } catch (error) {
-        console.error('Error testing API key:', error);
+        console.error('❌ Error registering:', error);
         return false;
     }
 }
 
-// Reset configuration
-resetBtn.addEventListener('click', () => {
-    const confirm = window.confirm('Are you sure you want to clear your configuration?');
-    if (!confirm) return;
+// SALVAR CONFIGURAÇÃO
+saveBtn.addEventListener('click', async () => {
+    const userName = userNameInput.value.trim();
+    const userEmail = userEmailInput.value.trim();
+    const apiKey = apiKeyInput.value.trim();
 
-    userNameInput.value = '';
-    userEmailInput.value = '';
-    apiKeyInput.value = '';
-    
-    chrome.storage.local.set({
-        userName: '',
-        userEmail: '',
-        apiKey: ''
-    }, () => {
-        loadSavedData();
+    if (!userName || !userEmail || !apiKey) {
+        alert('Please fill all fields');
+        return;
+    }
+
+    // Disable button during save
+    saveBtn.textContent = 'Saving...';
+    saveBtn.disabled = true;
+
+    // 1. Save to local storage
+    chrome.storage.local.set({ userName, userEmail, apiKey }, async () => {
+        
+        // 2. Register on backend
+        const registered = await registerUserOnBackend(userName, userEmail, apiKey);
+
+        if (registered) {
+            saveBtn.textContent = '✅ Saved!';
+            setTimeout(() => {
+                saveBtn.textContent = 'Save';
+                saveBtn.disabled = false;
+                loadSavedData();
+            }, 1500);
+        } else {
+            saveBtn.textContent = 'Save';
+            saveBtn.disabled = false;
+            alert('Saved locally. Could not reach backend - check your API Key.');
+            loadSavedData();
+        }
     });
 });
 
-// Edit configuration
+// RESETAR
+resetBtn.addEventListener('click', () => {
+    userNameInput.value = '';
+    userEmailInput.value = '';
+    apiKeyInput.value = '';
+    chrome.storage.local.set({ userName: '', userEmail: '', apiKey: '' }, loadSavedData);
+});
+
+// EDITAR
 editBtn.addEventListener('click', () => {
     chrome.storage.local.get(['userName', 'userEmail', 'apiKey'], (result) => {
         userNameInput.value = result.userName || '';
         userEmailInput.value = result.userEmail || '';
         apiKeyInput.value = result.apiKey || '';
-        
         configSection.style.display = 'block';
         displaySection.style.display = 'none';
     });
 });
 
-// Listen for messages from content script
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+// Ouvir mensagens do content.js
+chrome.runtime.onMessage.addListener((request) => {
     if (request.action === 'updateDetectionCount') {
         updateDetectionCount();
     }
 });
 
-// Auto-update counter every 2 seconds
+// Auto-refresh contador
 setInterval(updateDetectionCount, 2000);
