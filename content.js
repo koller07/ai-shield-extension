@@ -524,40 +524,48 @@ async function handleInput(event) {
             // Show alert for first detection
             showAlert(detections[0]);
             
-            // Update counter
-            chrome.storage.local.get(['detectionCount', 'userName', 'userEmail', 'apiKey'], async (result) => {
+            // Update counter FIRST (synchronously)
+            chrome.storage.local.get(['detectionCount'], (result) => {
                 const currentCount = result.detectionCount || 0;
                 const newCount = currentCount + detections.length;
                 
-                chrome.storage.local.set({ detectionCount: newCount });
-                
-                // Send to backend if configured
-                if (result.apiKey && result.userEmail) {
-                    // Register user if first detection
-                    if (currentCount === 0 && result.userName) {
-                        await registerUser(result.userName, result.userEmail, result.apiKey);
-                    }
+                // Save new count
+                chrome.storage.local.set({ detectionCount: newCount }, () => {
+                    console.log(`✅ Counter updated: ${currentCount} → ${newCount}`);
                     
-                    // Send each detection
-                    for (const detection of detections) {
-                        await sendDetectionToBackend(detection, result.userEmail, result.apiKey);
-                    }
-                }
-                
-                // Notify popup if open
-                try {
-                    if (chrome.runtime?.id) {
+                    // Notify popup if open
+                    try {
                         chrome.runtime.sendMessage({
                             action: 'updateDetectionCount',
                             count: newCount
-                        }, () => {
+                        }, (response) => {
                             if (chrome.runtime.lastError) {
-                                // Popup not open, ignore
+                                // Popup not open, that's ok
+                                console.log('Popup not open (normal)');
                             }
                         });
+                    } catch (e) {
+                        // Extension context invalidated, ignore
+                        console.log('Could not send message to popup');
                     }
-                } catch (e) {
-                    // Extension context invalidated, ignore
+                });
+            });
+            
+            // Send to backend (async, independent)
+            chrome.storage.local.get(['userName', 'userEmail', 'apiKey'], async (result) => {
+                if (result.apiKey && result.userEmail) {
+                    // Get current count for registration check
+                    chrome.storage.local.get(['detectionCount'], async (countResult) => {
+                        // Register user if first detection
+                        if ((countResult.detectionCount || 0) <= detections.length && result.userName) {
+                            await registerUser(result.userName, result.userEmail, result.apiKey);
+                        }
+                        
+                        // Send each detection
+                        for (const detection of detections) {
+                            await sendDetectionToBackend(detection, result.userEmail, result.apiKey);
+                        }
+                    });
                 }
             });
         }
