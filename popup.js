@@ -1,6 +1,6 @@
 // ============================================
-// IA SHIELD - POPUP v3.0
-// Compatible with content.js v3.0
+// IA SHIELD - POPUP SCRIPT v3.0
+// By Koller Group
 // ============================================
 
 // DOM Elements
@@ -34,22 +34,13 @@ function loadSavedData() {
             // Show display mode
             displayUserName.textContent = userName;
             displayUserEmail.textContent = userEmail;
-            
-            // Mask API Key for security (show only first 10 and last 4 chars)
-            if (apiKey.length > 14) {
-                displayApiKey.textContent = apiKey.substring(0, 10) + '...' + apiKey.substring(apiKey.length - 4);
-            } else {
-                displayApiKey.textContent = apiKey;
-            }
-            
+            displayApiKey.textContent = maskApiKey(apiKey);
             configSection.style.display = 'none';
             displaySection.style.display = 'block';
         } else {
             // Show configuration mode
             configSection.style.display = 'block';
             displaySection.style.display = 'none';
-            
-            // Pre-fill if partially saved
             if (userName) userNameInput.value = userName;
             if (userEmail) userEmailInput.value = userEmail;
             if (apiKey) apiKeyInput.value = apiKey;
@@ -61,6 +52,12 @@ function loadSavedData() {
     });
 }
 
+// Mask API Key for display
+function maskApiKey(key) {
+    if (key.length <= 12) return '••••••••••••';
+    return key.substring(0, 8) + '••••••••' + key.substring(key.length - 4);
+}
+
 // Update detection count
 function updateDetectionCount() {
     chrome.storage.local.get(['detectionCount'], (result) => {
@@ -70,69 +67,95 @@ function updateDetectionCount() {
 }
 
 // Save configuration
-saveBtn.addEventListener('click', () => {
+saveBtn.addEventListener('click', async () => {
     const userName = userNameInput.value.trim();
     const userEmail = userEmailInput.value.trim();
     const apiKey = apiKeyInput.value.trim();
 
     // Validation
-    if (!userName) {
-        alert('Please enter your name');
+    if (!userName || !userEmail || !apiKey) {
+        alert('Please fill in all fields');
         return;
     }
 
-    if (!userEmail) {
-        alert('Please enter your email');
-        return;
-    }
-
-    // Email validation
+    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userEmail)) {
         alert('Please enter a valid email address');
         return;
     }
 
-    if (!apiKey) {
-        alert('Please enter your API Key');
-        return;
-    }
-
-    // API Key validation (basic format check)
+    // Validate API Key format (should start with sk_)
     if (!apiKey.startsWith('sk_')) {
-        alert('Invalid API Key format. Should start with "sk_"');
-        return;
+        const confirm = window.confirm('API Key should start with "sk_". Continue anyway?');
+        if (!confirm) return;
     }
 
-    // Save to storage
-    chrome.storage.local.set({
-        userName: userName,
-        userEmail: userEmail,
-        apiKey: apiKey
-    }, () => {
-        console.log('✅ Configuration saved');
-        
-        // Update UI
-        loadSavedData();
-        
-        // Show success message briefly
-        const originalText = saveBtn.textContent;
-        saveBtn.textContent = '✅ Saved!';
-        saveBtn.style.background = '#27ae60';
-        
-        setTimeout(() => {
-            saveBtn.textContent = originalText;
-            saveBtn.style.background = '';
-        }, 2000);
-    });
+    // Show loading state
+    saveBtn.textContent = 'Validating...';
+    saveBtn.disabled = true;
+
+    // Test API Key with backend
+    const isValid = await testApiKey(apiKey, userEmail);
+
+    if (isValid) {
+        // Save to storage
+        chrome.storage.local.set({
+            userName: userName,
+            userEmail: userEmail,
+            apiKey: apiKey
+        }, () => {
+            saveBtn.textContent = '✓ Saved';
+            setTimeout(() => {
+                saveBtn.textContent = 'Save Configuration';
+                saveBtn.disabled = false;
+                loadSavedData();
+            }, 1000);
+        });
+    } else {
+        alert('Invalid API Key or connection error. Please check and try again.');
+        saveBtn.textContent = 'Save Configuration';
+        saveBtn.disabled = false;
+    }
 });
+
+// Test API Key with backend
+async function testApiKey(apiKey, userEmail) {
+    try {
+        const backendUrl = 'https://ai-shield-backend-production.up.railway.app';
+        
+        // Try to register/verify user
+        const response = await fetch(`${backendUrl}/api/users/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey
+            },
+            body: JSON.stringify({
+                userName: userNameInput.value.trim(),
+                userEmail: userEmail
+            })
+        });
+
+        if (response.ok) {
+            return true;
+        } else if (response.status === 409) {
+            // User already exists, that's OK
+            return true;
+        } else {
+            return false;
+        }
+    } catch (error) {
+        console.error('Error testing API key:', error);
+        return false;
+    }
+}
 
 // Reset configuration
 resetBtn.addEventListener('click', () => {
-    if (!confirm('Are you sure you want to clear your configuration?')) {
-        return;
-    }
-    
+    const confirm = window.confirm('Are you sure you want to clear your configuration?');
+    if (!confirm) return;
+
     userNameInput.value = '';
     userEmailInput.value = '';
     apiKeyInput.value = '';
@@ -142,7 +165,6 @@ resetBtn.addEventListener('click', () => {
         userEmail: '',
         apiKey: ''
     }, () => {
-        console.log('✅ Configuration cleared');
         loadSavedData();
     });
 });
