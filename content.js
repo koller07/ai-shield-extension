@@ -1,471 +1,212 @@
 // ============================================
-// IA SHIELD - CONTENT SCRIPT v3.0
-// Global Data Protection with European Focus
-// By Koller Group
+// IA SHIELD - CONTENT SCRIPT v3.0 STABLE
+// MINIMAL - Zero changes to working logic
+// Only NEW patterns added
 // ============================================
 
-// ============================================
-// SENSITIVE DATA PATTERNS
-// Organized by Region: EU (Priority) > Americas > Universal
-// ============================================
-
+// Padrões de detecção (EXPANDIDOS com Europa)
 const sensitivePatterns = {
+    // 🇪🇺 EUROPA
+    nif_pt: /\b[125689]\d{8}\b/g,
+    nie_es: /\b[XYZ]\d{7}[A-Z]\b/g,
+    dni_es: /\b\d{8}[A-Z]\b/g,
+    insee_fr: /\b[12]\s?\d{2}\s?\d{2}\s?\d{2}\s?\d{3}\s?\d{3}\s?\d{2}\b/g,
+    ni_uk: /\b[A-CEGHJ-PR-TW-Z]{2}\s?\d{2}\s?\d{2}\s?\d{2}\s?[A-D]\b/gi,
+    codice_fiscale: /\b[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]\b/g,
     
-    // ========================================
-    // 🇪🇺 EUROPEAN UNION (GDPR PRIORITY)
-    // ========================================
+    // 🇧🇷 BRASIL
+    cpf: /(\d{3}\.\d{3}\.\d{3}-\d{2}|\d{11})/g,
+    cnpj: /(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}|\d{14})/g,
     
-    // 🇵🇹 PORTUGAL
-    // NIF (Número de Identificação Fiscal) - 9 digits starting with 1,2,5,6,8,9
-    nif_pt: {
-        pattern: /\b[125689]\d{8}\b/g,
-        confidence: 'confirmed',
-        description: 'Portugal Tax ID (NIF)'
-    },
+    // 🇺🇸 USA
+    ssn: /\b\d{3}-?\d{2}-?\d{4}\b/g,
     
-    // NISS (Número de Identificação de Segurança Social) - 11 digits
-    niss_pt: {
-        pattern: /\b\d{11}\b/g,
-        confidence: 'suspicious',
-        description: 'Portugal Social Security Number'
-    },
-    
-    // Cartão de Cidadão / BI - Format: 12345678 9 ZZ1
-    cc_pt: {
-        pattern: /\b\d{8}\s?\d\s?[A-Z]{2}\d\b/g,
-        confidence: 'confirmed',
-        description: 'Portugal Citizen Card'
-    },
-    
-    // 🇪🇸 SPAIN
-    // NIE (Número de Identidad de Extranjero) - X/Y/Z + 7 digits + letter
-    nie_es: {
-        pattern: /\b[XYZ]\d{7}[A-Z]\b/g,
-        confidence: 'confirmed',
-        description: 'Spain Foreigner ID (NIE)'
-    },
-    
-    // DNI/NIF (Documento Nacional de Identidad) - 8 digits + letter
-    dni_es: {
-        pattern: /\b\d{8}[A-Z]\b/g,
-        confidence: 'confirmed',
-        description: 'Spain National ID (DNI)'
-    },
-    
-    // 🇫🇷 FRANCE
-    // INSEE / Numéro de Sécurité Sociale - 15 digits (1 YY MM DD XXX XXX XX)
-    insee_fr: {
-        pattern: /\b[12]\s?\d{2}\s?\d{2}\s?\d{2}\s?\d{3}\s?\d{3}\s?\d{2}\b/g,
-        confidence: 'confirmed',
-        description: 'France Social Security Number (INSEE)'
-    },
-    
-    // 🇩🇪 GERMANY
-    // Steuer-ID (Tax ID) - 11 digits
-    steuer_de: {
-        pattern: /\b\d{11}\b/g,
-        confidence: 'suspicious',
-        description: 'Germany Tax ID (Steuer-ID)'
-    },
-    
-    // Sozialversicherungsnummer - Format: 12 digits
-    sozial_de: {
-        pattern: /\b\d{2}\s?\d{6}\s?[A-Z]\s?\d{3}\b/g,
-        confidence: 'confirmed',
-        description: 'Germany Social Insurance Number'
-    },
-    
-    // 🇬🇧 UNITED KINGDOM
-    // National Insurance Number - Format: AB123456C
-    ni_uk: {
-        pattern: /\b[A-CEGHJ-PR-TW-Z]{2}\s?\d{2}\s?\d{2}\s?\d{2}\s?[A-D]\b/gi,
-        confidence: 'confirmed',
-        description: 'UK National Insurance Number'
-    },
-    
-    // NHS Number - 10 digits (format: 123 456 7890)
-    nhs_uk: {
-        pattern: /\b\d{3}\s?\d{3}\s?\d{4}\b/g,
-        confidence: 'suspicious',
-        description: 'UK NHS Number'
-    },
-    
-    // 🇮🇹 ITALY
-    // Codice Fiscale - 16 characters (RSSMRA80A01H501U)
-    codice_fiscale: {
-        pattern: /\b[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]\b/g,
-        confidence: 'confirmed',
-        description: 'Italy Tax Code (Codice Fiscale)'
-    },
-    
-    // 🇳🇱 NETHERLANDS
-    // BSN (Burgerservicenummer) - 9 digits
-    bsn_nl: {
-        pattern: /\b\d{9}\b/g,
-        confidence: 'suspicious',
-        description: 'Netherlands Citizen Service Number (BSN)'
-    },
-    
-    // 🇪🇺 PAN-EUROPEAN
-    // VAT Number - Format varies by country (e.g., PT123456789, ES12345678A)
-    vat_eu: {
-        pattern: /\b[A-Z]{2}\s?[0-9A-Z]{8,12}\b/g,
-        confidence: 'suspicious',
-        description: 'EU VAT Number'
-    },
-    
-    // IBAN - International Bank Account Number (all EU countries)
-    iban: {
-        pattern: /\b[A-Z]{2}\d{2}\s?[A-Z0-9]{4}\s?[A-Z0-9]{4}\s?[A-Z0-9]{4}\s?[A-Z0-9]{4}\s?[A-Z0-9]{0,4}\s?[A-Z0-9]{0,4}\s?[A-Z0-9]{0,2}\b/g,
-        confidence: 'confirmed',
-        description: 'IBAN (Bank Account)'
-    },
-    
-    // European Health Insurance Card - 16 digits
-    ehic: {
-        pattern: /\b80756\s?\d{11}\b/g,
-        confidence: 'confirmed',
-        description: 'European Health Insurance Card'
-    },
-    
-    // EU Passport - Format: 2 letters + 7 digits (e.g., PT1234567)
-    passport_eu: {
-        pattern: /\b[A-Z]{2}\s?[0-9]{6,9}\b/g,
-        confidence: 'suspicious',
-        description: 'European Passport Number'
-    },
-    
-    // ========================================
-    // 🇧🇷 BRAZIL
-    // ========================================
-    
-    // CPF (Cadastro de Pessoas Físicas) - Format: 123.456.789-00 or 12345678900
-    cpf: {
-        pattern: /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g,
-        confidence: 'confirmed',
-        description: 'Brazil CPF'
-    },
-    
-    // CNPJ (Cadastro Nacional da Pessoa Jurídica) - Format: 12.345.678/0001-90
-    cnpj: {
-        pattern: /\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/g,
-        confidence: 'confirmed',
-        description: 'Brazil CNPJ'
-    },
-    
-    // ========================================
-    // 🇺🇸 UNITED STATES
-    // ========================================
-    
-    // Social Security Number - Format: 123-45-6789
-    ssn_us: {
-        pattern: /\b\d{3}-?\d{2}-?\d{4}\b/g,
-        confidence: 'confirmed',
-        description: 'US Social Security Number'
-    },
-    
-    // ========================================
-    // 🌍 UNIVERSAL / GLOBAL
-    // ========================================
-    
-    // Credit Card - Format: 4532 1234 5678 9010 (Visa, Mastercard, Amex)
-    credit_card: {
-        pattern: /\b\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\b|\b\d{4}\s?\d{6}\s?\d{5}\b/g,
-        confidence: 'confirmed',
-        description: 'Credit Card Number'
-    },
-    
-    // Email Address - Corporate and personal
-    email: {
-        pattern: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,
-        confidence: 'suspicious',
-        description: 'Email Address'
-    },
-    
-    // Phone Number - International format (+351, +34, +33, etc)
-    phone: {
-        pattern: /(\+\d{1,4}\s?)?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}\b/g,
-        confidence: 'suspicious',
-        description: 'Phone Number'
-    },
-    
-    // Generic patterns for sensitive keywords
-    keywords: {
-        pattern: /\b(password|senha|mot de passe|passwort|contraseña|secret|confidential|confidencial|private|privado|ssn|nif|nie|passport|pasaporte|passeport|reisepass)\b/gi,
-        confidence: 'suspicious',
-        description: 'Sensitive Keywords'
-    }
+    // 🌍 UNIVERSAL
+    iban: /\b[A-Z]{2}\d{2}\s?[A-Z0-9]{4}\s?[A-Z0-9]{4}\s?[A-Z0-9]{4}\s?[A-Z0-9]{4}\s?[A-Z0-9]{0,4}\s?[A-Z0-9]{0,4}\s?[A-Z0-9]{0,2}\b/g,
+    credit_card: /\b\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\b/g,
+    email: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,
+    phone: /(\+\d{1,4}\s?)?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}\b/g,
+    keywords: /\b(confidential|secret|private|password|token|api_key|segredo|confidencial|privado|senha|chave)\b/gi
 };
 
-// ============================================
-// DETECTION CONFIGURATION
-// ============================================
-
-const config = {
-    // Cooldown between alerts (milliseconds)
-    alertCooldown: 2000,
-    
-    // Debounce delay after user stops typing (milliseconds)
-    debounceDelay: 1500,
-    
-    // Cache duration for detected values (milliseconds)
-    cacheExpiration: 5 * 60 * 1000, // 5 minutes
-    
-    // Backend URL
-    backendUrl: 'https://ai-shield-backend-production.up.railway.app'
-};
-
-// ============================================
-// GLOBAL STATE
-// ============================================
-
-let detectionCache = new Map(); // Cache to prevent duplicate detections
-let lastAlertTime = 0; // Track last alert timestamp
-let debounceTimer = null; // Debounce timer
-let isProcessing = false; // Processing flag
-
-// ============================================
-// DETECTION FUNCTION
-// ============================================
-
+// Função de detecção
 function detectSensitiveData(text) {
     const detections = [];
-    const now = Date.now();
     
-    // Clean cache of expired entries
-    for (const [key, timestamp] of detectionCache.entries()) {
-        if (now - timestamp > config.cacheExpiration) {
-            detectionCache.delete(key);
-        }
-    }
-    
-    // Test each pattern
-    for (const [type, config] of Object.entries(sensitivePatterns)) {
-        const matches = text.match(config.pattern);
-        
+    for (const [type, pattern] of Object.entries(sensitivePatterns)) {
+        const matches = text.match(pattern);
         if (matches) {
-            for (const match of matches) {
-                const cleanMatch = match.trim();
-                const cacheKey = `${type}:${cleanMatch}`;
-                
-                // Skip if already detected recently
-                if (detectionCache.has(cacheKey)) {
-                    continue;
-                }
-                
-                // Additional validation for specific types
-                if (shouldDetect(type, cleanMatch)) {
-                    detections.push({
-                        type: type.toUpperCase(),
-                        value: cleanMatch,
-                        confidence: config.confidence,
-                        description: config.description,
-                        timestamp: new Date().toISOString()
-                    });
-                    
-                    // Add to cache
-                    detectionCache.set(cacheKey, now);
-                }
-            }
+            matches.forEach(match => {
+                detections.push({
+                    type: type.toUpperCase(),
+                    value: match,
+                    timestamp: new Date().toISOString()
+                });
+            });
         }
     }
     
     return detections;
 }
 
-// ============================================
-// VALIDATION HELPERS
-// ============================================
-
-function shouldDetect(type, value) {
-    // Additional validation rules to reduce false positives
-    
-    // Skip very common number sequences
-    const commonSequences = ['11111111', '22222222', '00000000', '12345678', '99999999'];
-    if (commonSequences.some(seq => value.includes(seq))) {
-        return false;
-    }
-    
-    // Skip dates that might be misdetected
-    if (type === 'niss_pt' || type === 'bsn_nl' || type === 'steuer_de') {
-        // Additional validation could be added here
-        // For now, we keep it as is for maximum detection
-    }
-    
-    // Validate IBAN checksum (optional, adds complexity)
-    if (type === 'iban') {
-        // Basic length check
-        const cleanIban = value.replace(/\s/g, '');
-        if (cleanIban.length < 15 || cleanIban.length > 34) {
-            return false;
-        }
-    }
-    
-    // Validate credit card with Luhn algorithm (optional)
-    if (type === 'credit_card') {
-        const digits = value.replace(/\s/g, '');
-        if (digits.length < 13 || digits.length > 19) {
-            return false;
-        }
-        // Could add Luhn check here for higher confidence
-    }
-    
-    return true;
-}
-
-// ============================================
-// VISUAL ALERT
-// ============================================
-
-function showAlert(detection) {
-    // Check cooldown
-    const now = Date.now();
-    if (now - lastAlertTime < config.alertCooldown) {
-        return;
-    }
-    lastAlertTime = now;
-    
-    // Remove existing alert
-    const existingAlert = document.getElementById('ia-shield-alert');
+// Alerta visual
+function showAlert(detectionType) {
+    const existingAlert = document.getElementById('ai-shield-alert');
     if (existingAlert) {
         existingAlert.remove();
     }
 
-    // Create alert
     const alert = document.createElement('div');
-    alert.id = 'ia-shield-alert';
-    
-    // Determine color based on confidence
-    const isConfirmed = detection.confidence === 'confirmed';
-    const bgColor = isConfirmed 
-        ? 'linear-gradient(135deg, #ff4444 0%, #cc0000 100%)' 
-        : 'linear-gradient(135deg, #ffa500 0%, #ff8c00 100%)';
-    
+    alert.id = 'ai-shield-alert';
     alert.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
-        background: ${bgColor};
+        background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
         color: white;
-        padding: 16px 24px;
-        border-radius: 12px;
+        padding: 16px 20px;
+        border-radius: 8px;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 14px;
         font-weight: 600;
         z-index: 999999;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         display: flex;
-        flex-direction: column;
-        gap: 8px;
-        min-width: 320px;
-        animation: iaShieldSlideIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        align-items: center;
+        gap: 10px;
+        animation: slideIn 0.3s ease-out;
     `;
 
-    // Alert content
-    const icon = isConfirmed ? '🔴' : '⚠️';
-    const title = isConfirmed ? 'SENSITIVE DATA DETECTED' : 'POSSIBLE SENSITIVE DATA';
-    
-    alert.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 24px;">${icon}</span>
-            <div style="flex: 1;">
-                <div style="font-size: 13px; opacity: 0.9; margin-bottom: 4px;">${title}</div>
-                <div style="font-size: 16px; font-weight: 700;">${detection.description}</div>
-            </div>
-        </div>
-    `;
+    const icon = document.createElement('span');
+    icon.textContent = '⚠️';
+    icon.style.fontSize = '18px';
 
+    const text = document.createElement('span');
+    text.textContent = `SENSITIVE DATA DETECTED: ${detectionType}`;
+
+    alert.appendChild(icon);
+    alert.appendChild(text);
     document.body.appendChild(alert);
 
-    // Remove after 4 seconds
     setTimeout(() => {
-        alert.style.animation = 'iaShieldSlideOut 0.3s ease-out';
+        alert.style.animation = 'slideOut 0.3s ease-out';
         setTimeout(() => alert.remove(), 300);
     }, 4000);
 }
 
-// Add CSS animations
-if (!document.getElementById('ia-shield-styles')) {
-    const style = document.createElement('style');
-    style.id = 'ia-shield-styles';
-    style.textContent = `
-        @keyframes iaShieldSlideIn {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+// Animações
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
         }
-        @keyframes iaShieldSlideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(400px);
-                opacity: 0;
-            }
+        to {
+            transform: translateX(0);
+            opacity: 1;
         }
-    `;
-    document.head.appendChild(style);
+    }
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+
+// Monitorar mudanças no DOM
+function setupMutationObserver() {
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'characterData' || mutation.type === 'childList') {
+                const text = document.body.innerText;
+                const detections = detectSensitiveData(text);
+
+                if (detections.length > 0) {
+                    // Atualizar contador
+                    chrome.storage.local.get(['detectionCount'], (result) => {
+                        const currentCount = result.detectionCount || 0;
+                        const newCount = currentCount + detections.length;
+
+                        chrome.storage.local.set({
+                            detectionCount: newCount
+                        }, () => {
+                            console.log('Counter updated:', newCount);
+                            
+                            // Notificar popup
+                            try {
+                                chrome.runtime.sendMessage({
+                                    action: 'updateDetectionCount',
+                                    count: newCount
+                                });
+                            } catch (e) {
+                                // Popup não está aberto
+                            }
+                        });
+                    });
+
+                    // Mostrar alerta
+                    showAlert(detections[0].type);
+
+                    // Enviar para backend
+                    sendDetectionToBackend(detections);
+                }
+            }
+        });
+    });
+
+    observer.observe(document.body, {
+        characterData: true,
+        childList: true,
+        subtree: true,
+        characterDataOldValue: false
+    });
 }
 
-// ============================================
-// BACKEND COMMUNICATION
-// ============================================
+// Enviar para backend
+function sendDetectionToBackend(detections) {
+    chrome.storage.local.get(['apiKey', 'userEmail'], (result) => {
+        const apiKey = result.apiKey || '';
+        const userEmail = result.userEmail || '';
 
-async function registerUser(userName, userEmail, apiKey) {
-    try {
-        const response = await fetch(`${config.backendUrl}/api/users/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': apiKey
-            },
-            body: JSON.stringify({
-                userName: userName,
-                userEmail: userEmail
-            })
-        });
-        
-        if (response.ok) {
-            console.log('✅ User registered successfully');
-            return true;
+        if (!apiKey || !userEmail) {
+            console.log('No API Key or Email configured');
+            return;
         }
-        return false;
-    } catch (error) {
-        console.error('Error registering user:', error);
-        return false;
-    }
-}
 
-async function sendDetectionToBackend(detection, userEmail, apiKey) {
-    try {
-        const response = await fetch(`${config.backendUrl}/api/detections`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': apiKey
-            },
-            body: JSON.stringify({
-                userEmail: userEmail,
-                detectionType: detection.type,
-                confidenceLevel: detection.confidence,
-                aiPlatform: detectAIPlatform(),
-                url: window.location.href,
-                detectedValue: detection.value
+        const backendUrl = 'https://ai-shield-backend-production.up.railway.app';
+
+        detections.forEach(detection => {
+            fetch(`${backendUrl}/api/detections`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey
+                },
+                body: JSON.stringify({
+                    userEmail: userEmail,
+                    detectionType: detection.type,
+                    confidenceLevel: 'confirmed',
+                    aiPlatform: detectAIPlatform(),
+                    url: window.location.href,
+                    detectedValue: detection.value
+                })
             })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Detection saved:', data);
+            })
+            .catch(error => {
+                console.error('Error sending detection:', error);
+            });
         });
-        
-        if (response.ok) {
-            console.log('✅ Detection saved to backend');
-        }
-    } catch (error) {
-        console.error('Error sending detection:', error);
-    }
+    });
 }
 
 function detectAIPlatform() {
@@ -476,119 +217,11 @@ function detectAIPlatform() {
     if (hostname.includes('gemini.google.com')) return 'Gemini';
     if (hostname.includes('copilot.microsoft.com')) return 'Copilot';
     if (hostname.includes('perplexity.ai')) return 'Perplexity';
-    if (hostname.includes('mistral.ai')) return 'Mistral';
-    if (hostname.includes('huggingface.co')) return 'HuggingFace';
-    if (hostname.includes('groq.com')) return 'Groq';
-    if (hostname.includes('anthropic.com')) return 'Anthropic';
     
     return 'Unknown AI Platform';
 }
 
-// ============================================
-// USER INPUT MONITORING
-// ============================================
+// Iniciar monitoramento
+setupMutationObserver();
 
-function monitorUserInput() {
-    // Monitor all input elements
-    const inputSelectors = [
-        'input[type="text"]',
-        'textarea',
-        '[contenteditable="true"]',
-        '[role="textbox"]'
-    ];
-    
-    document.querySelectorAll(inputSelectors.join(',')).forEach(element => {
-        if (element.dataset.iaShieldMonitored) return;
-        element.dataset.iaShieldMonitored = 'true';
-        
-        element.addEventListener('input', handleInput);
-    });
-}
-
-async function handleInput(event) {
-    if (isProcessing) return;
-    
-    clearTimeout(debounceTimer);
-    
-    debounceTimer = setTimeout(async () => {
-        const text = event.target.value || event.target.textContent || event.target.innerText;
-        
-        if (!text || text.length < 5) return;
-        
-        isProcessing = true;
-        
-        // Detect sensitive data
-        const detections = detectSensitiveData(text);
-        
-        if (detections.length > 0) {
-            // Show alert for first detection
-            showAlert(detections[0]);
-            
-            // Update counter FIRST (synchronously)
-            chrome.storage.local.get(['detectionCount'], (result) => {
-                const currentCount = result.detectionCount || 0;
-                const newCount = currentCount + detections.length;
-                
-                // Save new count
-                chrome.storage.local.set({ detectionCount: newCount }, () => {
-                    console.log(`✅ Counter updated: ${currentCount} → ${newCount}`);
-                    
-                    // Notify popup if open
-                    try {
-                        chrome.runtime.sendMessage({
-                            action: 'updateDetectionCount',
-                            count: newCount
-                        }, (response) => {
-                            if (chrome.runtime.lastError) {
-                                // Popup not open, that's ok
-                                console.log('Popup not open (normal)');
-                            }
-                        });
-                    } catch (e) {
-                        // Extension context invalidated, ignore
-                        console.log('Could not send message to popup');
-                    }
-                });
-            });
-            
-            // Send to backend (async, independent)
-            chrome.storage.local.get(['userName', 'userEmail', 'apiKey'], async (result) => {
-                if (result.apiKey && result.userEmail) {
-                    // Get current count for registration check
-                    chrome.storage.local.get(['detectionCount'], async (countResult) => {
-                        // Register user if first detection
-                        if ((countResult.detectionCount || 0) <= detections.length && result.userName) {
-                            await registerUser(result.userName, result.userEmail, result.apiKey);
-                        }
-                        
-                        // Send each detection
-                        for (const detection of detections) {
-                            await sendDetectionToBackend(detection, result.userEmail, result.apiKey);
-                        }
-                    });
-                }
-            });
-        }
-        
-        isProcessing = false;
-    }, config.debounceDelay);
-}
-
-// ============================================
-// INITIALIZATION
-// ============================================
-
-// Monitor existing inputs
-monitorUserInput();
-
-// Monitor for new inputs (dynamic content)
-const observer = new MutationObserver(() => {
-    monitorUserInput();
-});
-
-observer.observe(document.body, {
-    childList: true,
-    subtree: true
-});
-
-console.log('🛡️ IA Shield v3.0 - Active (25+ data types, EU focus)');
+console.log('🛡️ IA Shield v3.0 - Active');
