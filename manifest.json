@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "IA Shield - Compliance Auditor",
-  "version": "2.0.0",
-  "description": "Real-time data protection for AI platforms - GDPR, EU AI Act, CCPA compliant",
+  "name": "AI Shield - Compliance Auditor",
+  "version": "3.0.0",
+  "description": "Real-time data protection for AI platforms - GDPR, EU AI Act, CCPA compliant. Protects 25+ sensitive data types.",
   "permissions": [
     "storage",
     "activeTab"
@@ -17,15 +17,11 @@
     "https://chat.mistral.ai/*",
     "https://huggingface.co/*",
     "https://groq.com/*",
-    "https://www.anthropic.com/*",
-    "https://ai-shield-backend-production.up.railway.app/*"
+    "https://www.anthropic.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "IA Shield - Data Protection",
-    "default_icon": {
-      "128": "icons/icon128.png"
-    }
+    "default_title": "AI Shield - Data Protection"
   },
   "content_scripts": [
     {
@@ -46,6 +42,8 @@
     }
   ],
   "icons": {
-    "128": "icons/icon128.png"
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
   }
 }
