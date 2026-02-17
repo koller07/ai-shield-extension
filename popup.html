@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IA Shield | Data Protection</title>
+    <title>IA-Shield v3.0 | Compliance Auditor</title>
     <style>
         * {
             margin: 0;
@@ -13,7 +13,7 @@
 
         body {
             width: 380px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: linear-gradient(135deg, #001a3d 0%, #002d5c 100%);
             color: #ffffff;
             padding: 0;
@@ -36,8 +36,10 @@
             flex: 1;
         }
 
-        .logo-icon {
-            font-size: 32px;
+        .logo-svg {
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
         }
 
         .header-text h1 {
@@ -139,8 +141,7 @@
         }
 
         input[type="text"],
-        input[type="email"],
-        input[type="password"] {
+        input[type="email"] {
             width: 100%;
             padding: 12px;
             background: rgba(0, 168, 232, 0.08);
@@ -153,15 +154,15 @@
         }
 
         input[type="text"]:focus,
-        input[type="email"]:focus,
-        input[type="password"]:focus {
+        input[type="email"]:focus {
             outline: none;
             background: rgba(0, 168, 232, 0.15);
             border-color: #00d4ff;
             box-shadow: 0 0 0 3px rgba(0, 168, 232, 0.1);
         }
 
-        input::placeholder {
+        input[type="text"]::placeholder,
+        input[type="email"]::placeholder {
             color: #005580;
         }
 
@@ -221,6 +222,12 @@
 
         .btn-primary:active {
             transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .btn-secondary {
@@ -285,26 +292,41 @@
             letter-spacing: 0.5px;
         }
 
-        /* Version badge */
-        .version-badge {
-            display: inline-block;
-            background: rgba(0, 168, 232, 0.2);
-            color: #00a8e8;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 600;
-            margin-left: 8px;
+        /* Responsive */
+        @media (max-width: 400px) {
+            body {
+                width: 100%;
+            }
+
+            .detection-counter {
+                font-size: 36px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="logo-container">
-            <div class="logo-icon">🛡️</div>
+            <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <!-- Shield Background -->
+                <defs>
+                    <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#0066cc;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#003d7a;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                
+                <!-- Shield Border -->
+                <path d="M 50 10 L 80 25 L 80 55 Q 80 80 50 90 Q 20 80 20 55 L 20 25 Z" 
+                      fill="url(#shieldGradient)" stroke="white" stroke-width="2"/>
+                
+                <!-- IA Text -->
+                <text x="50" y="65" font-size="32" font-weight="bold" fill="white" 
+                      text-anchor="middle" font-family="Arial, sans-serif">IA</text>
+            </svg>
             <div class="header-text">
-                <h1>IA Shield <span class="version-badge">v3.0</span></h1>
-                <p>Data Protection</p>
+                <h1>IA-Shield v3.0</h1>
+                <p>Compliance Auditor</p>
             </div>
         </div>
     </div>
@@ -312,9 +334,9 @@
     <div class="container">
         <!-- Detection Counter -->
         <div class="status-card">
-            <div class="status-label">Detections</div>
+            <div class="status-label">Sensitive Data Detections</div>
             <div class="detection-counter" id="detectionCount">0</div>
-            <div class="counter-description">this session</div>
+            <div class="counter-description">detected in this session</div>
         </div>
 
         <!-- Configuration Section -->
@@ -336,11 +358,11 @@
 
             <div class="input-group">
                 <label class="input-label">API Key</label>
-                <input type="password" id="apiKey" placeholder="sk_team_xxxxxxxxxx" />
+                <input type="text" id="apiKey" placeholder="sk_team_xxxxxxxxxxxxx" />
             </div>
 
             <div class="button-group">
-                <button class="btn-primary" id="saveBtn">Save</button>
+                <button class="btn-primary" id="saveBtn">Save Configuration</button>
                 <button class="btn-secondary" id="resetBtn">Clear</button>
             </div>
         </div>
@@ -349,7 +371,7 @@
         <div id="displaySection" style="display: none;">
             <div class="config-title">
                 <div class="config-icon">✓</div>
-                Active Protection
+                Active Configuration
             </div>
 
             <div class="input-group">
@@ -373,12 +395,12 @@
         <!-- Status Indicator -->
         <div class="status-indicator">
             <div class="status-dot"></div>
-            <span>Real-time monitoring active</span>
+            <span>Real-time monitoring active | 25+ data types</span>
         </div>
     </div>
 
     <div class="footer">
-        <div class="footer-text">🛡️ 25+ data types protected | EU Focus</div>
+        <div class="footer-text">🛡️ Your data is protected | v3.0 | EU Focus</div>
         <div class="footer-brand">By Koller Group</div>
     </div>
 
