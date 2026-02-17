@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IA-Shield v3.0 | Compliance Auditor</title>
+    <title>AI Shield - Compliance Auditor</title>
     <style>
         * {
             margin: 0;
@@ -16,123 +16,172 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: linear-gradient(135deg, #001a3d 0%, #002d5c 100%);
             color: #ffffff;
-            padding: 0;
         }
 
         /* Header */
         .header {
             background: linear-gradient(135deg, #001a3d 0%, #003d7a 100%);
-            padding: 16px 20px;
+            padding: 18px 20px;
             border-bottom: 2px solid #00a8e8;
+        }
+
+        .brand {
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
-        .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex: 1;
-        }
-
-        .logo-svg {
+        .brand-logo {
             width: 40px;
             height: 40px;
             flex-shrink: 0;
         }
 
-        .header-text h1 {
-            font-size: 15px;
+        .brand-text h1 {
+            font-size: 16px;
             font-weight: 700;
             color: #ffffff;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
         }
 
-        .header-text p {
-            font-size: 10px;
+        .brand-text p {
+            font-size: 11px;
             color: #00a8e8;
             font-weight: 500;
             letter-spacing: 1px;
             text-transform: uppercase;
         }
 
-        /* Main Content */
+        /* Main Container */
         .container {
-            padding: 24px;
+            padding: 24px 20px;
         }
 
-        /* Status Card */
-        .status-card {
-            background: rgba(0, 168, 232, 0.1);
-            border: 1px solid #00a8e8;
+        /* Total Counter */
+        .total-card {
+            background: rgba(0, 168, 232, 0.08);
+            border: 1px solid rgba(0, 168, 232, 0.25);
             border-radius: 12px;
             padding: 20px;
-            margin-bottom: 24px;
             text-align: center;
+            margin-bottom: 16px;
         }
 
-        .status-label {
-            font-size: 12px;
+        .total-label {
+            font-size: 11px;
             color: #00a8e8;
             text-transform: uppercase;
             letter-spacing: 1px;
             font-weight: 600;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
-        .detection-counter {
+        .total-number {
             font-size: 48px;
             font-weight: 700;
             color: #00a8e8;
-            margin-bottom: 8px;
             font-family: 'Monaco', 'Courier New', monospace;
+            line-height: 1;
+            margin-bottom: 6px;
         }
 
-        .counter-description {
-            font-size: 13px;
-            color: #a0c4d4;
+        .total-sub {
+            font-size: 12px;
+            color: #6b9ab8;
             font-weight: 500;
         }
 
-        /* Configuration Section */
+        /* Split Counters */
+        .split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .counter-card {
+            background: rgba(0, 168, 232, 0.06);
+            border: 1px solid;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .counter-card.confirmed {
+            border-color: rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.08);
+        }
+
+        .counter-card.suspicious {
+            border-color: rgba(245, 158, 11, 0.3);
+            background: rgba(245, 158, 11, 0.08);
+        }
+
+        .counter-label {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .confirmed .counter-label {
+            color: #ff6b6b;
+        }
+
+        .suspicious .counter-label {
+            color: #ffa726;
+        }
+
+        .counter-number {
+            font-size: 32px;
+            font-weight: 700;
+            font-family: 'Monaco', 'Courier New', monospace;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .confirmed .counter-number {
+            color: #ff6b6b;
+        }
+
+        .suspicious .counter-number {
+            color: #ffa726;
+        }
+
+        .counter-sub {
+            font-size: 10px;
+            color: #6b9ab8;
+            font-weight: 500;
+        }
+
+        /* Config Section */
         .config-section {
             margin-bottom: 20px;
         }
 
-        .config-title {
-            font-size: 12px;
+        .section-title {
+            font-size: 11px;
             color: #00a8e8;
             text-transform: uppercase;
             letter-spacing: 1px;
             font-weight: 600;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 168, 232, 0.2);
         }
 
-        .config-icon {
-            width: 16px;
-            height: 16px;
-            background: #00a8e8;
-            border-radius: 3px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            color: #001a3d;
-            font-weight: bold;
-        }
-
-        /* Input Fields */
-        .input-group {
+        .field {
             margin-bottom: 12px;
         }
 
-        .input-label {
-            font-size: 12px;
-            color: #a0c4d4;
+        .field-label {
+            font-size: 11px;
+            color: #6b9ab8;
             font-weight: 600;
             margin-bottom: 6px;
             display: block;
@@ -141,11 +190,12 @@
         }
 
         input[type="text"],
-        input[type="email"] {
+        input[type="email"],
+        input[type="password"] {
             width: 100%;
-            padding: 12px;
-            background: rgba(0, 168, 232, 0.08);
-            border: 1px solid #00a8e8;
+            padding: 11px 14px;
+            background: rgba(0, 168, 232, 0.06);
+            border: 1px solid rgba(0, 168, 232, 0.25);
             border-radius: 8px;
             color: #ffffff;
             font-size: 13px;
@@ -153,33 +203,28 @@
             transition: all 0.3s ease;
         }
 
-        input[type="text"]:focus,
-        input[type="email"]:focus {
+        input:focus {
             outline: none;
-            background: rgba(0, 168, 232, 0.15);
-            border-color: #00d4ff;
-            box-shadow: 0 0 0 3px rgba(0, 168, 232, 0.1);
+            background: rgba(0, 168, 232, 0.1);
+            border-color: #00a8e8;
+            box-shadow: 0 0 0 3px rgba(0, 168, 232, 0.15);
         }
 
-        input[type="text"]::placeholder,
-        input[type="email"]::placeholder {
-            color: #005580;
+        input::placeholder {
+            color: rgba(107, 154, 184, 0.5);
         }
 
-        /* Display Mode (when saved) */
+        /* Display Fields */
         .display-field {
-            background: rgba(0, 168, 232, 0.08);
-            border: 1px solid #00a8e8;
+            background: rgba(0, 168, 232, 0.06);
+            border: 1px solid rgba(0, 168, 232, 0.2);
             border-radius: 8px;
-            padding: 12px;
-            font-size: 13px;
-            color: #ffffff;
-            font-weight: 500;
-            word-break: break-all;
+            padding: 12px 14px;
+            margin-bottom: 10px;
         }
 
         .display-label {
-            font-size: 11px;
+            font-size: 10px;
             color: #00a8e8;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -188,16 +233,24 @@
             font-weight: 600;
         }
 
+        .display-value {
+            font-size: 13px;
+            color: #ffffff;
+            font-weight: 500;
+            font-family: 'Monaco', 'Courier New', monospace;
+            word-break: break-all;
+        }
+
         /* Buttons */
-        .button-group {
+        .btn-row {
             display: flex;
-            gap: 12px;
-            margin-top: 16px;
+            gap: 10px;
+            margin-top: 14px;
         }
 
         button {
             flex: 1;
-            padding: 12px;
+            padding: 11px;
             border: none;
             border-radius: 8px;
             font-size: 13px;
@@ -215,50 +268,45 @@
         }
 
         .btn-primary:hover {
-            background: #00d4ff;
+            background: #00c4ff;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 168, 232, 0.3);
-        }
-
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
+            box-shadow: 0 4px 12px rgba(0, 168, 232, 0.4);
         }
 
         .btn-secondary {
-            background: rgba(0, 168, 232, 0.2);
+            background: rgba(0, 168, 232, 0.15);
             color: #00a8e8;
-            border: 1px solid #00a8e8;
+            border: 1px solid rgba(0, 168, 232, 0.3);
         }
 
         .btn-secondary:hover {
-            background: rgba(0, 168, 232, 0.3);
-            border-color: #00d4ff;
-            color: #00d4ff;
+            background: rgba(0, 168, 232, 0.25);
+            border-color: #00a8e8;
+        }
+
+        .btn-full {
+            width: 100%;
         }
 
         /* Status Indicator */
         .status-indicator {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
             padding: 12px;
-            background: rgba(0, 168, 232, 0.1);
+            background: rgba(0, 168, 232, 0.08);
+            border: 1px solid rgba(0, 168, 232, 0.2);
             border-radius: 8px;
-            margin-top: 16px;
-            font-size: 12px;
-            color: #a0c4d4;
+            margin-top: 20px;
+            font-size: 11px;
+            color: #6b9ab8;
         }
 
         .status-dot {
-            width: 8px;
-            height: 8px;
-            background: #00a8e8;
+            width: 7px;
+            height: 7px;
+            background: #22c55e;
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
@@ -266,141 +314,148 @@
         @keyframes pulse {
             0%, 100% {
                 opacity: 1;
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
             }
             50% {
-                opacity: 0.5;
+                opacity: 0.8;
+                box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
             }
         }
 
         /* Footer */
         .footer {
-            padding: 16px 24px;
+            padding: 16px 20px;
             border-top: 1px solid rgba(0, 168, 232, 0.2);
-            font-size: 11px;
-            color: #005580;
             text-align: center;
         }
 
         .footer-text {
+            font-size: 11px;
+            color: rgba(107, 154, 184, 0.7);
             margin-bottom: 4px;
         }
 
         .footer-brand {
-            font-size: 12px;
+            font-size: 11px;
             color: #00a8e8;
             font-weight: 600;
             letter-spacing: 0.5px;
         }
-
-        /* Responsive */
-        @media (max-width: 400px) {
-            body {
-                width: 100%;
-            }
-
-            .detection-counter {
-                font-size: 36px;
-            }
-        }
     </style>
 </head>
 <body>
+
+    <!-- HEADER -->
     <div class="header">
-        <div class="logo-container">
-            <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <div class="brand">
+            <!-- AI Shield Logo SVG -->
+            <svg class="brand-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                 <!-- Shield Background -->
-                <defs>
-                    <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#0066cc;stop-opacity:1" />
-                        <stop offset="100%" style="stop-color:#003d7a;stop-opacity:1" />
-                    </linearGradient>
-                </defs>
-                
-                <!-- Shield Border -->
-                <path d="M 50 10 L 80 25 L 80 55 Q 80 80 50 90 Q 20 80 20 55 L 20 25 Z" 
-                      fill="url(#shieldGradient)" stroke="white" stroke-width="2"/>
-                
+                <path d="M50 5 L85 20 L85 50 Q85 75 50 95 Q15 75 15 50 L15 20 Z" 
+                      fill="#003d7a" 
+                      stroke="#00a8e8" 
+                      stroke-width="2"/>
                 <!-- IA Text -->
-                <text x="50" y="65" font-size="32" font-weight="bold" fill="white" 
-                      text-anchor="middle" font-family="Arial, sans-serif">IA</text>
+                <text x="50" y="63" 
+                      font-size="32" 
+                      font-weight="bold" 
+                      fill="#ffffff" 
+                      text-anchor="middle" 
+                      font-family="Arial, sans-serif">IA</text>
             </svg>
-            <div class="header-text">
-                <h1>IA-Shield v3.0</h1>
+            <div class="brand-text">
+                <h1>AI Shield</h1>
                 <p>Compliance Auditor</p>
             </div>
         </div>
     </div>
 
+    <!-- CONTAINER -->
     <div class="container">
-        <!-- Detection Counter -->
-        <div class="status-card">
-            <div class="status-label">Sensitive Data Detections</div>
-            <div class="detection-counter" id="detectionCount">0</div>
-            <div class="counter-description">detected in this session</div>
+
+        <!-- Total Counter -->
+        <div class="total-card">
+            <div class="total-label">Detections</div>
+            <div class="total-number" id="detectionCount">0</div>
+            <div class="total-sub">this session</div>
         </div>
 
-        <!-- Configuration Section -->
-        <div class="config-section" id="configSection">
-            <div class="config-title">
-                <div class="config-icon">⚙️</div>
-                Setup Your Account
+        <!-- Split: Confirmed + Suspicious -->
+        <div class="split">
+            <div class="counter-card confirmed">
+                <div class="counter-label">
+                    🔴 Confirmed
+                </div>
+                <div class="counter-number" id="confirmedCount">0</div>
+                <div class="counter-sub">high risk</div>
             </div>
+            <div class="counter-card suspicious">
+                <div class="counter-label">
+                    ⚠️ Suspicious
+                </div>
+                <div class="counter-number" id="suspiciousCount">0</div>
+                <div class="counter-sub">medium risk</div>
+            </div>
+        </div>
 
-            <div class="input-group">
-                <label class="input-label">Your Name</label>
+        <!-- Config Section -->
+        <div class="config-section" id="configSection">
+            <div class="section-title">Setup Your Account</div>
+
+            <div class="field">
+                <label class="field-label">Your Name</label>
                 <input type="text" id="userName" placeholder="John Doe" />
             </div>
 
-            <div class="input-group">
-                <label class="input-label">Your Email</label>
+            <div class="field">
+                <label class="field-label">Your Email</label>
                 <input type="email" id="userEmail" placeholder="john@company.com" />
             </div>
 
-            <div class="input-group">
-                <label class="input-label">API Key</label>
-                <input type="text" id="apiKey" placeholder="sk_team_xxxxxxxxxxxxx" />
+            <div class="field">
+                <label class="field-label">API Key</label>
+                <input type="password" id="apiKey" placeholder="sk_team_xxxxxxxxxx" />
             </div>
 
-            <div class="button-group">
-                <button class="btn-primary" id="saveBtn">Save Configuration</button>
+            <div class="btn-row">
+                <button class="btn-primary" id="saveBtn">Save</button>
                 <button class="btn-secondary" id="resetBtn">Clear</button>
             </div>
         </div>
 
-        <!-- Display Section (shown when saved) -->
+        <!-- Display Section -->
         <div id="displaySection" style="display: none;">
-            <div class="config-title">
-                <div class="config-icon">✓</div>
-                Active Configuration
-            </div>
+            <div class="section-title">Active Configuration</div>
 
-            <div class="input-group">
+            <div class="display-field">
                 <span class="display-label">Name</span>
-                <div class="display-field" id="displayUserName"></div>
+                <div class="display-value" id="displayUserName"></div>
             </div>
 
-            <div class="input-group">
+            <div class="display-field">
                 <span class="display-label">Email</span>
-                <div class="display-field" id="displayUserEmail"></div>
+                <div class="display-value" id="displayUserEmail"></div>
             </div>
 
-            <div class="input-group">
+            <div class="display-field">
                 <span class="display-label">API Key</span>
-                <div class="display-field" id="displayApiKey"></div>
+                <div class="display-value" id="displayApiKey"></div>
             </div>
 
-            <button class="btn-secondary" id="editBtn" style="width: 100%; margin-top: 16px;">Edit Configuration</button>
+            <button class="btn-secondary btn-full" id="editBtn">Edit Configuration</button>
         </div>
 
-        <!-- Status Indicator -->
+        <!-- Status -->
         <div class="status-indicator">
             <div class="status-dot"></div>
-            <span>Real-time monitoring active | 25+ data types</span>
+            <span>Real-time monitoring active</span>
         </div>
+
     </div>
 
+    <!-- FOOTER -->
     <div class="footer">
-        <div class="footer-text">🛡️ Your data is protected | v3.0 | EU Focus</div>
+        <div class="footer-text">🛡️ 25+ data types protected · EU focused</div>
         <div class="footer-brand">By Koller Group</div>
     </div>
 
