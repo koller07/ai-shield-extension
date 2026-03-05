@@ -35,7 +35,6 @@
             width: 40px;
             height: 40px;
             flex-shrink: 0;
-            object-fit: contain; /* ← ADICIONADO para a imagem caber corretamente */
         }
 
         .brand-text h1 {
@@ -349,8 +348,21 @@
     <!-- HEADER -->
     <div class="header">
         <div class="brand">
-            <!-- ✅ LOGO CORRETA - Imagem PNG -->
-            <img src="icon.png" alt="AI Shield Logo" class="brand-logo" />
+            <!-- AI Shield Logo SVG - ✅ CORRIGIDO: "AI" NO LUGAR DE "IA" -->
+            <svg class="brand-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <!-- Shield Background -->
+                <path d="M50 5 L85 20 L85 50 Q85 75 50 95 Q15 75 15 50 L15 20 Z" 
+                      fill="#003d7a" 
+                      stroke="#00a8e8" 
+                      stroke-width="2"/>
+                <!-- AI Text - ✅ MUDOU DE "IA" PARA "AI" -->
+                <text x="50" y="63" 
+                      font-size="32" 
+                      font-weight="bold" 
+                      fill="#ffffff" 
+                      text-anchor="middle" 
+                      font-family="Arial, sans-serif">AI</text>
+            </svg>
             <div class="brand-text">
                 <h1>AI Shield</h1>
                 <p>Compliance Auditor</p>
