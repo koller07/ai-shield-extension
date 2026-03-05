@@ -13,99 +13,98 @@
 
         body {
             width: 380px;
-            max-height: 600px; /* ← ADICIONADO: Limita altura */
-            overflow-y: auto; /* ← ADICIONADO: Scroll suave se necessário */
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: linear-gradient(135deg, #001a3d 0%, #002d5c 100%);
             color: #ffffff;
         }
 
-        /* Header - COMPACTADO */
+        /* Header */
         .header {
             background: linear-gradient(135deg, #001a3d 0%, #003d7a 100%);
-            padding: 14px 18px; /* ← REDUZIDO: era 18px 20px */
+            padding: 18px 20px;
             border-bottom: 2px solid #00a8e8;
         }
 
         .brand {
             display: flex;
             align-items: center;
-            gap: 10px; /* ← REDUZIDO: era 12px */
+            gap: 12px;
         }
 
         .brand-logo {
-            width: 36px; /* ← REDUZIDO: era 40px */
-            height: 36px;
+            width: 40px;
+            height: 40px;
             flex-shrink: 0;
+            object-fit: contain; /* ← ADICIONADO para a imagem caber corretamente */
         }
 
         .brand-text h1 {
-            font-size: 15px; /* ← REDUZIDO: era 16px */
+            font-size: 16px;
             font-weight: 700;
             color: #ffffff;
             letter-spacing: 0.3px;
         }
 
         .brand-text p {
-            font-size: 10px; /* ← REDUZIDO: era 11px */
+            font-size: 11px;
             color: #00a8e8;
             font-weight: 500;
             letter-spacing: 1px;
             text-transform: uppercase;
         }
 
-        /* Main Container - COMPACTADO */
+        /* Main Container */
         .container {
-            padding: 18px 18px; /* ← REDUZIDO: era 24px 20px */
+            padding: 24px 20px;
         }
 
-        /* Total Counter - COMPACTADO */
+        /* Total Counter */
         .total-card {
             background: rgba(0, 168, 232, 0.08);
             border: 1px solid rgba(0, 168, 232, 0.25);
-            border-radius: 10px; /* ← REDUZIDO: era 12px */
-            padding: 16px; /* ← REDUZIDO: era 20px */
+            border-radius: 12px;
+            padding: 20px;
             text-align: center;
-            margin-bottom: 14px; /* ← REDUZIDO: era 16px */
+            margin-bottom: 16px;
         }
 
         .total-label {
-            font-size: 10px; /* ← REDUZIDO: era 11px */
+            font-size: 11px;
             color: #00a8e8;
             text-transform: uppercase;
             letter-spacing: 1px;
             font-weight: 600;
-            margin-bottom: 8px; /* ← REDUZIDO: era 10px */
+            margin-bottom: 10px;
         }
 
         .total-number {
-            font-size: 40px; /* ← REDUZIDO: era 48px */
+            font-size: 48px;
             font-weight: 700;
             color: #00a8e8;
             font-family: 'Monaco', 'Courier New', monospace;
             line-height: 1;
-            margin-bottom: 5px; /* ← REDUZIDO: era 6px */
+            margin-bottom: 6px;
         }
 
         .total-sub {
-            font-size: 11px; /* ← REDUZIDO: era 12px */
+            font-size: 12px;
             color: #6b9ab8;
             font-weight: 500;
         }
 
-        /* Split Counters - COMPACTADO */
+        /* Split Counters */
         .split {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px; /* ← REDUZIDO: era 12px */
-            margin-bottom: 18px; /* ← REDUZIDO: era 24px */
+            gap: 12px;
+            margin-bottom: 24px;
         }
 
         .counter-card {
             background: rgba(0, 168, 232, 0.06);
             border: 1px solid;
-            border-radius: 8px; /* ← REDUZIDO: era 10px */
-            padding: 14px; /* ← REDUZIDO: era 16px */
+            border-radius: 10px;
+            padding: 16px;
             text-align: center;
         }
 
@@ -124,11 +123,11 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.8px;
-            margin-bottom: 8px; /* ← REDUZIDO: era 10px */
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 4px; /* ← REDUZIDO: era 5px */
+            gap: 5px;
         }
 
         .confirmed .counter-label {
@@ -140,11 +139,11 @@
         }
 
         .counter-number {
-            font-size: 28px; /* ← REDUZIDO: era 32px */
+            font-size: 32px;
             font-weight: 700;
             font-family: 'Monaco', 'Courier New', monospace;
             line-height: 1;
-            margin-bottom: 3px; /* ← REDUZIDO: era 4px */
+            margin-bottom: 4px;
         }
 
         .confirmed .counter-number {
@@ -156,36 +155,36 @@
         }
 
         .counter-sub {
-            font-size: 9px; /* ← REDUZIDO: era 10px */
+            font-size: 10px;
             color: #6b9ab8;
             font-weight: 500;
         }
 
-        /* Config Section - COMPACTADO */
+        /* Config Section */
         .config-section {
-            margin-bottom: 16px; /* ← REDUZIDO: era 20px */
+            margin-bottom: 20px;
         }
 
         .section-title {
-            font-size: 10px; /* ← REDUZIDO: era 11px */
+            font-size: 11px;
             color: #00a8e8;
             text-transform: uppercase;
             letter-spacing: 1px;
             font-weight: 600;
-            margin-bottom: 12px; /* ← REDUZIDO: era 14px */
-            padding-bottom: 6px; /* ← REDUZIDO: era 8px */
+            margin-bottom: 14px;
+            padding-bottom: 8px;
             border-bottom: 1px solid rgba(0, 168, 232, 0.2);
         }
 
         .field {
-            margin-bottom: 10px; /* ← REDUZIDO: era 12px */
+            margin-bottom: 12px;
         }
 
         .field-label {
-            font-size: 10px; /* ← REDUZIDO: era 11px */
+            font-size: 11px;
             color: #6b9ab8;
             font-weight: 600;
-            margin-bottom: 5px; /* ← REDUZIDO: era 6px */
+            margin-bottom: 6px;
             display: block;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -195,12 +194,12 @@
         input[type="email"],
         input[type="password"] {
             width: 100%;
-            padding: 9px 12px; /* ← REDUZIDO: era 11px 14px */
+            padding: 11px 14px;
             background: rgba(0, 168, 232, 0.06);
             border: 1px solid rgba(0, 168, 232, 0.25);
-            border-radius: 7px; /* ← REDUZIDO: era 8px */
+            border-radius: 8px;
             color: #ffffff;
-            font-size: 12px; /* ← REDUZIDO: era 13px */
+            font-size: 13px;
             font-family: inherit;
             transition: all 0.3s ease;
         }
@@ -216,46 +215,46 @@
             color: rgba(107, 154, 184, 0.5);
         }
 
-        /* Display Fields - COMPACTADO */
+        /* Display Fields */
         .display-field {
             background: rgba(0, 168, 232, 0.06);
             border: 1px solid rgba(0, 168, 232, 0.2);
-            border-radius: 7px; /* ← REDUZIDO: era 8px */
-            padding: 10px 12px; /* ← REDUZIDO: era 12px 14px */
-            margin-bottom: 8px; /* ← REDUZIDO: era 10px */
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
         }
 
         .display-label {
-            font-size: 9px; /* ← REDUZIDO: era 10px */
+            font-size: 10px;
             color: #00a8e8;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 3px; /* ← REDUZIDO: era 4px */
+            margin-bottom: 4px;
             display: block;
             font-weight: 600;
         }
 
         .display-value {
-            font-size: 12px; /* ← REDUZIDO: era 13px */
+            font-size: 13px;
             color: #ffffff;
             font-weight: 500;
             font-family: 'Monaco', 'Courier New', monospace;
             word-break: break-all;
         }
 
-        /* Buttons - COMPACTADO */
+        /* Buttons */
         .btn-row {
             display: flex;
-            gap: 8px; /* ← REDUZIDO: era 10px */
-            margin-top: 12px; /* ← REDUZIDO: era 14px */
+            gap: 10px;
+            margin-top: 14px;
         }
 
         button {
             flex: 1;
-            padding: 9px; /* ← REDUZIDO: era 11px */
+            padding: 11px;
             border: none;
-            border-radius: 7px; /* ← REDUZIDO: era 8px */
-            font-size: 12px; /* ← REDUZIDO: era 13px */
+            border-radius: 8px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             text-transform: uppercase;
@@ -290,24 +289,24 @@
             width: 100%;
         }
 
-        /* Status Indicator - COMPACTADO */
+        /* Status Indicator */
         .status-indicator {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 7px; /* ← REDUZIDO: era 8px */
-            padding: 10px; /* ← REDUZIDO: era 12px */
+            gap: 8px;
+            padding: 12px;
             background: rgba(0, 168, 232, 0.08);
             border: 1px solid rgba(0, 168, 232, 0.2);
-            border-radius: 7px; /* ← REDUZIDO: era 8px */
-            margin-top: 16px; /* ← REDUZIDO: era 20px */
-            font-size: 10px; /* ← REDUZIDO: era 11px */
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 11px;
             color: #6b9ab8;
         }
 
         .status-dot {
-            width: 6px; /* ← REDUZIDO: era 7px */
-            height: 6px;
+            width: 7px;
+            height: 7px;
             background: #22c55e;
             border-radius: 50%;
             animation: pulse 2s infinite;
@@ -324,21 +323,21 @@
             }
         }
 
-        /* Footer - COMPACTADO */
+        /* Footer */
         .footer {
-            padding: 12px 18px; /* ← REDUZIDO: era 16px 20px */
+            padding: 16px 20px;
             border-top: 1px solid rgba(0, 168, 232, 0.2);
             text-align: center;
         }
 
         .footer-text {
-            font-size: 10px; /* ← REDUZIDO: era 11px */
+            font-size: 11px;
             color: rgba(107, 154, 184, 0.7);
-            margin-bottom: 3px; /* ← REDUZIDO: era 4px */
+            margin-bottom: 4px;
         }
 
         .footer-brand {
-            font-size: 10px; /* ← REDUZIDO: era 11px */
+            font-size: 11px;
             color: #00a8e8;
             font-weight: 600;
             letter-spacing: 0.5px;
@@ -350,21 +349,8 @@
     <!-- HEADER -->
     <div class="header">
         <div class="brand">
-            <!-- AI Shield Logo SVG -->
-            <svg class="brand-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <!-- Shield Background -->
-                <path d="M50 5 L85 20 L85 50 Q85 75 50 95 Q15 75 15 50 L15 20 Z" 
-                      fill="#003d7a" 
-                      stroke="#00a8e8" 
-                      stroke-width="2"/>
-                <!-- IA Text -->
-                <text x="50" y="63" 
-                      font-size="32" 
-                      font-weight="bold" 
-                      fill="#ffffff" 
-                      text-anchor="middle" 
-                      font-family="Arial, sans-serif">IA</text>
-            </svg>
+            <!-- ✅ LOGO CORRETA - Imagem PNG -->
+            <img src="icon.png" alt="AI Shield Logo" class="brand-logo" />
             <div class="brand-text">
                 <h1>AI Shield</h1>
                 <p>Compliance Auditor</p>
