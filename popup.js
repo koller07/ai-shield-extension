@@ -1,152 +1,88 @@
-// AI Shield - popup.js
-// Registra usuário no backend ao salvar configuração
+// ============================================
+// AI-SHIELD POPUP
+// Integrated with authentication system
+// ============================================
 
-const BACKEND_URL = 'https://ai-shield-backend-production.up.railway.app';
+const API_URL = 'https://ai-shield-backend-production.up.railway.app';
 
+// DOM elements
 const detectionCountElement = document.getElementById('detectionCount');
-const userNameInput = document.getElementById('userName');
-const userEmailInput = document.getElementById('userEmail');
-const apiKeyInput = document.getElementById('apiKey');
-const saveBtn = document.getElementById('saveBtn');
-const resetBtn = document.getElementById('resetBtn');
-const editBtn = document.getElementById('editBtn');
 const configSection = document.getElementById('configSection');
 const displaySection = document.getElementById('displaySection');
-const displayUserName = document.getElementById('displayUserName');
-const displayUserEmail = document.getElementById('displayUserEmail');
-const displayApiKey = document.getElementById('displayApiKey');
+const displayUserEmail = document.getElementById('displayUserId');
+const displayCompanyName = document.getElementById('displayCompanyId');
 
+// Load data when popup opens
 document.addEventListener('DOMContentLoaded', () => {
-    loadSavedData();
+    loadAuthData();
     updateDetectionCount();
 });
 
-function loadSavedData() {
-    chrome.storage.local.get(['userName', 'userEmail', 'apiKey', 'detectionCount', 'confirmedCount', 'suspiciousCount'], (result) => {
-        const userName = result.userName || '';
-        const userEmail = result.userEmail || '';
-        const apiKey = result.apiKey || '';
-
-        if (userName && userEmail && apiKey) {
-            displayUserName.textContent = userName;
-            displayUserEmail.textContent = userEmail;
-            displayApiKey.textContent = apiKey.substring(0, 12) + '...' + apiKey.substring(apiKey.length - 4);
+// Load authentication data
+async function loadAuthData() {
+    chrome.storage.local.get(['authToken', 'user', 'company'], (result) => {
+        if (result.authToken && result.user && result.company) {
+            // User authenticated
+            const user = JSON.parse(result.user);
+            const company = JSON.parse(result.company);
+            
+            // Show display mode
+            displayUserEmail.textContent = user.email;
+            displayCompanyName.textContent = company.name;
             configSection.style.display = 'none';
             displaySection.style.display = 'block';
         } else {
+            // Not authenticated
             configSection.style.display = 'block';
             displaySection.style.display = 'none';
-            if (userName) userNameInput.value = userName;
-            if (userEmail) userEmailInput.value = userEmail;
-            if (apiKey) apiKeyInput.value = apiKey;
         }
-
-        detectionCountElement.textContent = result.detectionCount || 0;
-        document.getElementById('confirmedCount').textContent = result.confirmedCount || 0;
-        document.getElementById('suspiciousCount').textContent = result.suspiciousCount || 0;
     });
 }
 
+// Update detection count
 function updateDetectionCount() {
-    chrome.storage.local.get(['detectionCount', 'confirmedCount', 'suspiciousCount'], (result) => {
-        detectionCountElement.textContent = result.detectionCount || 0;
-        document.getElementById('confirmedCount').textContent = result.confirmedCount || 0;
-        document.getElementById('suspiciousCount').textContent = result.suspiciousCount || 0;
+    chrome.storage.local.get(['detectionCount'], (result) => {
+        const count = result.detectionCount || 0;
+        detectionCountElement.textContent = count;
     });
 }
 
-// REGISTRAR USUÁRIO NO BACKEND
-async function registerUserOnBackend(userName, userEmail, apiKey) {
-    try {
-        const response = await fetch(`${BACKEND_URL}/api/users/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': apiKey
-            },
-            body: JSON.stringify({
-                userName: userName,
-                userEmail: userEmail
-            })
+// "Login" button (takes to site)
+document.getElementById('saveBtn')?.addEventListener('click', () => {
+    chrome.tabs.create({ url: 'https://seu-site.vercel.app/login' });
+});
+
+// "Edit" button (takes to site)
+document.getElementById('editBtn')?.addEventListener('click', () => {
+    chrome.tabs.create({ url: 'https://seu-site.vercel.app/company-dashboard' });
+});
+
+// "Logout" button
+const logoutBtn = document.createElement('button');
+logoutBtn.textContent = 'Logout';
+logoutBtn.className = 'btn-secondary';
+logoutBtn.style.width = '100%';
+logoutBtn.style.marginTop = '16px';
+logoutBtn.addEventListener('click', () => {
+    if (confirm('Are you sure you want to logout?')) {
+        chrome.storage.local.remove(['authToken', 'user', 'company', 'detectionCount'], () => {
+            loadAuthData();
+            detectionCountElement.textContent = '0';
         });
-
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-            console.log('✅ User registered on backend');
-            return true;
-        } else {
-            console.error('❌ Register failed:', data.error);
-            return false;
-        }
-    } catch (error) {
-        console.error('❌ Error registering:', error);
-        return false;
     }
+});
+
+// Add logout button to displaySection
+if (displaySection) {
+    displaySection.appendChild(logoutBtn);
 }
 
-// SALVAR CONFIGURAÇÃO
-saveBtn.addEventListener('click', async () => {
-    const userName = userNameInput.value.trim();
-    const userEmail = userEmailInput.value.trim();
-    const apiKey = apiKeyInput.value.trim();
-
-    if (!userName || !userEmail || !apiKey) {
-        alert('Please fill all fields');
-        return;
-    }
-
-    // Disable button during save
-    saveBtn.textContent = 'Saving...';
-    saveBtn.disabled = true;
-
-    // 1. Save to local storage
-    chrome.storage.local.set({ userName, userEmail, apiKey }, async () => {
-        
-        // 2. Register on backend
-        const registered = await registerUserOnBackend(userName, userEmail, apiKey);
-
-        if (registered) {
-            saveBtn.textContent = '✅ Saved!';
-            setTimeout(() => {
-                saveBtn.textContent = 'Save';
-                saveBtn.disabled = false;
-                loadSavedData();
-            }, 1500);
-        } else {
-            saveBtn.textContent = 'Save';
-            saveBtn.disabled = false;
-            alert('Saved locally. Could not reach backend - check your API Key.');
-            loadSavedData();
-        }
-    });
-});
-
-// RESETAR
-resetBtn.addEventListener('click', () => {
-    userNameInput.value = '';
-    userEmailInput.value = '';
-    apiKeyInput.value = '';
-    chrome.storage.local.set({ userName: '', userEmail: '', apiKey: '' }, loadSavedData);
-});
-
-// EDITAR
-editBtn.addEventListener('click', () => {
-    chrome.storage.local.get(['userName', 'userEmail', 'apiKey'], (result) => {
-        userNameInput.value = result.userName || '';
-        userEmailInput.value = result.userEmail || '';
-        apiKeyInput.value = result.apiKey || '';
-        configSection.style.display = 'block';
-        displaySection.style.display = 'none';
-    });
-});
-
-// Ouvir mensagens do content.js
-chrome.runtime.onMessage.addListener((request) => {
+// Listen to messages from content script
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'updateDetectionCount') {
         updateDetectionCount();
     }
 });
 
-// Auto-refresh contador
+// Update counter every 2 seconds
 setInterval(updateDetectionCount, 2000);
