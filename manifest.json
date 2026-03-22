@@ -1,11 +1,10 @@
 {
   "manifest_version": 3,
   "name": "AI Shield - Compliance Auditor",
-  "version": "3.0.0",
-  "description": "Real-time data protection for AI platforms - GDPR, EU AI Act, CCPA compliant. Protects 25+ sensitive data types.",
+  "version": "1.0.1",
+  "description": "Real-time data protection for AI platforms - GDPR, EU AI Act, CCPA compliant",
   "permissions": [
-    "storage",
-    "activeTab"
+    "storage"
   ],
   "host_permissions": [
     "https://chatgpt.com/*",
@@ -42,8 +41,6 @@
     }
   ],
   "icons": {
-  "16": "icons/icon.png",
-  "48": "icons/icon.png",
-  "128": "icons/icon.png"
- }
+    "128": "icons/icon128.png"
+  }
 }
