@@ -10,16 +10,11 @@
         body {
             width: 380px;
             min-height: 500px;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             color: #ffffff;
         }
 
-        .container {
-            padding: 0;
-        }
-
-        /* HEADER */
         .header {
             background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
             padding: 1.5rem;
@@ -28,22 +23,24 @@
         }
 
         .logo {
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             margin: 0 auto 1rem;
-            background: linear-gradient(135deg, #3b82f6, #06b6d4);
-            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
-            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+        }
+
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 8px 24px rgba(59, 130, 246, 0.4));
         }
 
         .header h1 {
             font-size: 1.375rem;
             font-weight: 800;
-            letter-spacing: -0.025em;
             margin-bottom: 0.25rem;
         }
 
@@ -52,20 +49,15 @@
             color: #06b6d4;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
         }
 
-        /* CONTENT */
-        .content {
-            padding: 2rem 1.5rem;
-        }
+        .content { padding: 2rem 1.5rem; }
 
-        /* LOGIN SECTION */
-        .login-section {
+        .section {
             display: none;
         }
 
-        .login-section.active {
+        .section.active {
             display: block;
         }
 
@@ -80,7 +72,6 @@
             color: #cbd5e1;
             margin-bottom: 0.5rem;
             text-transform: uppercase;
-            letter-spacing: 0.025em;
         }
 
         .form-group input {
@@ -116,7 +107,6 @@
             border: none;
             transition: all 0.2s;
             text-transform: uppercase;
-            letter-spacing: 0.025em;
         }
 
         .btn-primary {
@@ -144,37 +134,6 @@
 
         .btn-secondary:hover {
             background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin: 1.5rem 0;
-        }
-
-        .divider::before,
-        .divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .divider span {
-            font-size: 0.8125rem;
-            color: rgba(255, 255, 255, 0.5);
-            font-weight: 600;
-        }
-
-        /* LOGGED IN SECTION */
-        .logged-in-section {
-            display: none;
-        }
-
-        .logged-in-section.active {
-            display: block;
         }
 
         .stat-card {
@@ -191,7 +150,6 @@
             color: #06b6d4;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
             margin-bottom: 0.5rem;
         }
 
@@ -200,7 +158,6 @@
             font-weight: 900;
             color: white;
             line-height: 1;
-            font-family: 'Monaco', 'Courier New', monospace;
         }
 
         .stat-description {
@@ -283,6 +240,32 @@
             display: block;
         }
 
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .divider span {
+            font-size: 0.8125rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 600;
+        }
+
+        .text-center {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
         .link {
             color: #06b6d4;
             text-decoration: none;
@@ -293,62 +276,48 @@
         .link:hover {
             text-decoration: underline;
         }
-
-        .text-center {
-            text-align: center;
-            margin-top: 1rem;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
-            <div class="logo">🛡️</div>
+            <div class="logo">
+                <img src="icon.png" alt="AI Shield Logo">
+            </div>
             <h1>AI Shield</h1>
-            <p>Compliance Auditor</p>
+            <p>Data Protection</p>
         </div>
 
-        <!-- Content -->
         <div class="content">
-            <!-- Error Message -->
             <div class="error-message" id="errorMessage"></div>
 
-            <!-- LOGIN SECTION -->
-            <div class="login-section active" id="loginSection">
+            <!-- LOGIN -->
+            <div class="section active" id="loginSection">
                 <form id="loginForm">
                     <div class="form-group">
                         <label>Email</label>
-                        <input type="email" id="loginEmail" placeholder="your@email.com" required>
+                        <input type="email" id="loginEmail" placeholder="your@email.com" required autocomplete="email">
                     </div>
 
                     <div class="form-group">
                         <label>Password</label>
-                        <input type="password" id="loginPassword" placeholder="••••••••" required>
+                        <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
                     </div>
 
-                    <button type="submit" class="btn btn-primary" id="loginBtn">
-                        Sign In
-                    </button>
+                    <button type="submit" class="btn btn-primary" id="loginBtn">Sign In</button>
                 </form>
 
-                <div class="divider">
-                    <span>OR</span>
-                </div>
+                <div class="divider"><span>OR</span></div>
 
-                <button class="btn btn-secondary" onclick="openDashboard()">
-                    Open Dashboard
-                </button>
+                <button class="btn btn-secondary" id="openDashboardBtn">Open Dashboard</button>
 
                 <div class="text-center">
-                    <a href="https://www.getaishield.eu/signup" class="link" target="_blank">
-                        Don't have an account? Sign up
-                    </a>
+                    <a href="#" class="link" id="signupLink">Don't have an account? Sign up</a>
                 </div>
             </div>
 
-            <!-- LOGGED IN SECTION -->
-            <div class="logged-in-section" id="loggedInSection">
+            <!-- LOGGED IN -->
+            <div class="section" id="loggedInSection">
                 <div class="stat-card">
                     <div class="stat-label">Detections Today</div>
                     <div class="stat-value" id="detectionCount">0</div>
@@ -366,17 +335,12 @@
                     </div>
                     <div class="user-info-row">
                         <span class="user-info-label">Plan</span>
-                        <span class="user-info-value">Team</span>
+                        <span class="user-info-value" id="planName">Team</span>
                     </div>
                 </div>
 
-                <button class="btn btn-secondary" onclick="openDashboard()">
-                    Open Dashboard
-                </button>
-
-                <button class="btn btn-secondary" onclick="logout()">
-                    Logout
-                </button>
+                <button class="btn btn-secondary" id="viewDashboardBtn">Open Dashboard</button>
+                <button class="btn btn-secondary" id="logoutBtn">Logout</button>
 
                 <div class="status-indicator">
                     <div class="status-dot"></div>
@@ -386,134 +350,6 @@
         </div>
     </div>
 
-    <script>
-        const API_URL = 'https://ai-shield-backend-production.up.railway.app';
-        const DASHBOARD_URL = 'https://www.getaishield.eu';
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            checkAuthStatus();
-            loadDetectionCount();
-        });
-
-        // Check if user is logged in
-        async function checkAuthStatus() {
-            const authToken = localStorage.getItem('authToken');
-            const user = localStorage.getItem('user');
-            const company = localStorage.getItem('company');
-
-            if (authToken && user && company) {
-                showLoggedIn(JSON.parse(user), JSON.parse(company));
-            } else {
-                showLogin();
-            }
-        }
-
-        // Show login screen
-        function showLogin() {
-            document.getElementById('loginSection').classList.add('active');
-            document.getElementById('loggedInSection').classList.remove('active');
-        }
-
-        // Show logged in screen
-        function showLoggedIn(user, company) {
-            document.getElementById('loginSection').classList.remove('active');
-            document.getElementById('loggedInSection').classList.add('active');
-            
-            document.getElementById('userEmail').textContent = user.email;
-            document.getElementById('companyName').textContent = company.name;
-        }
-
-        // Login form submit
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            const loginBtn = document.getElementById('loginBtn');
-
-            loginBtn.disabled = true;
-            loginBtn.textContent = 'Signing in...';
-            hideError();
-
-            try {
-                const response = await fetch(`${API_URL}/api/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.token) {
-                    // Save to localStorage
-                    localStorage.setItem('authToken', data.token);
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                    localStorage.setItem('company', JSON.stringify(data.company));
-
-                    // Save to chrome.storage for content script
-                    chrome.storage.local.set({
-                        authToken: data.token,
-                        user: data.user,
-                        company: data.company,
-                        companyId: data.company.id,
-                        userId: data.user.id
-                    });
-
-                    showLoggedIn(data.user, data.company);
-                } else {
-                    showError(data.error || 'Login failed. Please check your credentials.');
-                }
-            } catch (error) {
-                showError('Connection error. Please try again.');
-            } finally {
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Sign In';
-            }
-        });
-
-        // Load detection count
-        function loadDetectionCount() {
-            chrome.storage.local.get(['detectionCount'], (result) => {
-                const count = result.detectionCount || 0;
-                document.getElementById('detectionCount').textContent = count;
-            });
-        }
-
-        // Update detection count from content script
-        chrome.runtime.onMessage.addListener((request) => {
-            if (request.action === 'updateDetectionCount') {
-                loadDetectionCount();
-            }
-        });
-
-        // Auto-refresh count
-        setInterval(loadDetectionCount, 2000);
-
-        // Open dashboard
-        function openDashboard() {
-            chrome.tabs.create({ url: `${DASHBOARD_URL}/company-dashboard` });
-        }
-
-        // Logout
-        function logout() {
-            localStorage.clear();
-            chrome.storage.local.clear();
-            showLogin();
-            document.getElementById('detectionCount').textContent = '0';
-        }
-
-        // Show error
-        function showError(message) {
-            const errorEl = document.getElementById('errorMessage');
-            errorEl.textContent = message;
-            errorEl.classList.add('show');
-        }
-
-        // Hide error
-        function hideError() {
-            document.getElementById('errorMessage').classList.remove('show');
-        }
-    </script>
+    <script src="popup.js"></script>
 </body>
 </html>
