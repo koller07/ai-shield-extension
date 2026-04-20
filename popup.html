@@ -1,355 +1,346 @@
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Shield - Login</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Shield</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0D1117;
+      color: #fff;
+      -webkit-font-smoothing: antialiased;
+    }
 
-        body {
-            width: 380px;
-            min-height: 500px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            color: #ffffff;
-        }
+    /* ─── HEADER ─── */
+    .header {
+      background: #0D1117;
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .header-logo {
+      width: 28px; height: 28px; background: #0052CC; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .header-logo svg { width: 15px; height: 15px; fill: white; }
+    .header-title { font-size: 13px; font-weight: 700; color: white; }
+    .header-sub   { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 1px; }
+    .header-dot {
+      margin-left: auto; width: 7px; height: 7px; border-radius: 50%;
+      background: #059669; flex-shrink: 0;
+      box-shadow: 0 0 0 2px rgba(5,150,105,.25);
+    }
+    .header-dot.off { background: #374151; box-shadow: none; }
 
-        .header {
-            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-            padding: 1.5rem;
-            border-bottom: 2px solid #3b82f6;
-            text-align: center;
-        }
+    /* ─── SECTIONS / TABS ─── */
+    .section { display: none; }
+    .section.active { display: block; }
+    .content { padding: 16px; }
+    .tab-bar { display: flex; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .tab {
+      flex: 1; padding: 8px 0; font-size: 12px; font-weight: 500;
+      color: rgba(255,255,255,.4); background: none; border: none;
+      cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+      font-family: inherit; transition: color .15s;
+    }
+    .tab.active { color: white; border-bottom-color: #0052CC; }
+    .tab:hover:not(.active) { color: rgba(255,255,255,.7); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
 
-        .logo {
-            width: 70px;
-            height: 70px;
-            margin: 0 auto 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    /* ─── FORMS ─── */
+    .form-group { margin-bottom: 11px; }
+    .form-group label {
+      display: block; font-size: 10.5px; font-weight: 600;
+      color: rgba(255,255,255,.45); text-transform: uppercase;
+      letter-spacing: .07em; margin-bottom: 5px;
+    }
+    .form-group input {
+      width: 100%; padding: 8px 11px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 7px; color: white; font-size: 13px; font-family: inherit;
+      outline: none; transition: border-color .15s;
+    }
+    .form-group input:focus { border-color: #0052CC; background: rgba(0,82,204,.08); }
+    .form-group input::placeholder { color: rgba(255,255,255,.2); }
 
-        .logo img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            filter: drop-shadow(0 8px 24px rgba(59, 130, 246, 0.4));
-        }
+    /* ─── BUTTONS ─── */
+    .btn {
+      width: 100%; padding: 8px 14px; border-radius: 7px; font-size: 13px;
+      font-weight: 600; cursor: pointer; border: none; font-family: inherit;
+      transition: all .15s; text-align: center;
+    }
+    .btn-primary { background: #0052CC; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #0040A8; }
+    .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-secondary {
+      background: rgba(255,255,255,.06); color: rgba(255,255,255,.75);
+      border: 1px solid rgba(255,255,255,.1); margin-top: 7px;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,.1); }
+    .btn-ghost-red {
+      background: transparent; color: rgba(252,165,165,.7);
+      border: 1px solid rgba(217,45,32,.2); margin-top: 7px; font-size: 12px;
+    }
+    .btn-ghost-red:hover { background: rgba(217,45,32,.08); }
 
-        .header h1 {
-            font-size: 1.375rem;
-            font-weight: 800;
-            margin-bottom: 0.25rem;
-        }
+    /* ─── TOGGLE BETWEEN FORMS ─── */
+    .form-toggle {
+      text-align: center; margin-top: 12px;
+      font-size: 12px; color: rgba(255,255,255,.35);
+    }
+    .form-toggle a { color: #60A5FA; text-decoration: none; font-weight: 500; }
+    .form-toggle a:hover { text-decoration: underline; }
 
-        .header p {
-            font-size: 0.875rem;
-            color: #06b6d4;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
+    /* ─── ERROR ─── */
+    .error-msg {
+      display: none; background: rgba(217,45,32,.1);
+      border: 1px solid rgba(217,45,32,.25); color: #FCA5A5;
+      padding: 8px 11px; border-radius: 7px; font-size: 12px;
+      margin-bottom: 12px; line-height: 1.45;
+    }
+    .error-msg.show { display: block; }
 
-        .content { padding: 2rem 1.5rem; }
+    /* ─── OVERVIEW STATS ─── */
+    .stat-big {
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 12px;
+    }
+    .stat-big-num {
+      font-size: 40px; font-weight: 800; color: #60A5FA; line-height: 1;
+    }
+    .stat-big-label { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 5px; }
 
-        .section {
-            display: none;
-        }
+    .user-card {
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 9px; padding: 11px; margin-bottom: 12px;
+    }
+    .user-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 4px 0; font-size: 12px;
+    }
+    .user-row + .user-row {
+      border-top: 1px solid rgba(255,255,255,.05); margin-top: 5px; padding-top: 7px;
+    }
+    .user-key { color: rgba(255,255,255,.4); }
+    .user-val {
+      color: white; font-weight: 500; max-width: 160px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right;
+    }
 
-        .section.active {
-            display: block;
-        }
+    /* ─── INACTIVE BANNER ─── */
+    .inactive-banner {
+      background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.2);
+      border-radius: 8px; padding: 10px 12px; font-size: 12px;
+      color: #FCD34D; line-height: 1.5; margin-bottom: 12px;
+    }
 
-        .form-group {
-            margin-bottom: 1.25rem;
-        }
+    /* ─── STATUS ─── */
+    .status-bar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 11px;
+      background: rgba(5,150,105,.08); border: 1px solid rgba(5,150,105,.2);
+      border-radius: 7px; margin-top: 11px;
+    }
+    .status-dot-anim {
+      width: 6px; height: 6px; border-radius: 50%; background: #059669;
+      animation: pulse 2s ease infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
+    .status-text { font-size: 12px; color: #6EE7B7; font-weight: 500; }
 
-        .form-group label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #cbd5e1;
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 0.875rem;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 10px;
-            color: white;
-            font-size: 0.9375rem;
-            font-family: inherit;
-            transition: all 0.2s;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            background: rgba(255, 255, 255, 0.15);
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-        }
-
-        .form-group input::placeholder {
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .btn {
-            width: 100%;
-            padding: 1rem;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 0.9375rem;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-            text-transform: uppercase;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #3b82f6, #06b6d4);
-            color: white;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.5);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            margin-top: 0.75rem;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 12px;
-            padding: 1.25rem;
-            margin-bottom: 1rem;
-            text-align: center;
-        }
-
-        .stat-label {
-            font-size: 0.75rem;
-            color: #06b6d4;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: 900;
-            color: white;
-            line-height: 1;
-        }
-
-        .stat-description {
-            font-size: 0.8125rem;
-            color: rgba(255, 255, 255, 0.6);
-            margin-top: 0.5rem;
-        }
-
-        .user-info {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 12px;
-            padding: 1.25rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .user-info-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.75rem;
-        }
-
-        .user-info-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .user-info-label {
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.6);
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .user-info-value {
-            font-size: 0.875rem;
-            color: white;
-            font-weight: 700;
-        }
-
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.875rem;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 10px;
-            margin-top: 1.5rem;
-            font-size: 0.8125rem;
-            color: #10b981;
-            font-weight: 600;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background: #10b981;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .error-message {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #ef4444;
-            padding: 0.875rem;
-            border-radius: 10px;
-            font-size: 0.8125rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: none;
-        }
-
-        .error-message.show {
-            display: block;
-        }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin: 1.5rem 0;
-        }
-
-        .divider::before,
-        .divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .divider span {
-            font-size: 0.8125rem;
-            color: rgba(255, 255, 255, 0.5);
-            font-weight: 600;
-        }
-
-        .text-center {
-            text-align: center;
-            margin-top: 1rem;
-        }
-
-        .link {
-            color: #06b6d4;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.875rem;
-        }
-
-        .link:hover {
-            text-decoration: underline;
-        }
-    </style>
+    /* ─── SETTINGS ─── */
+    .settings-title {
+      font-size: 10px; font-weight: 600; color: rgba(255,255,255,.4);
+      text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px;
+    }
+    .settings-group { margin-bottom: 14px; }
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-label { font-size: 12.5px; color: rgba(255,255,255,.8); }
+    .toggle-desc  { font-size: 10.5px; color: rgba(255,255,255,.3); margin-top: 1px; }
+    .toggle { position: relative; width: 32px; height: 18px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background: rgba(255,255,255,.15); border-radius: 9px; transition: background .2s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute; width: 13px; height: 13px;
+      left: 2.5px; top: 2.5px; background: white; border-radius: 50%;
+      transition: transform .2s;
+    }
+    .toggle input:checked + .toggle-slider { background: #0052CC; }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(13px); }
+    .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .data-chip {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 9px; background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.07); border-radius: 6px;
+    }
+    .data-chip-label { font-size: 11.5px; color: rgba(255,255,255,.7); }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">
-                <img src="icon.png" alt="AI Shield Logo">
-            </div>
-            <h1>AI Shield</h1>
-            <p>Data Protection</p>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-logo">
+      <svg viewBox="0 0 20 20"><path d="M10 1L2 4.5v6C2 14.5 5.5 18.3 10 19c4.5-.7 8-4.5 8-8.5v-6L10 1zm-1 11.4L5.6 9l1.4-1.4 2 2 4-4L14.4 7 9 12.4z"/></svg>
+    </div>
+    <div>
+      <div class="header-title">AI Shield</div>
+      <div class="header-sub" id="headerSub">Employee Protection</div>
+    </div>
+    <div class="header-dot off" id="headerDot"></div>
+  </div>
+
+  <!-- ══ NOT LOGGED IN ══ -->
+  <div class="section active" id="authSection">
+    <div class="content">
+      <div class="error-msg" id="errorMsg"></div>
+
+      <!-- LOGIN FORM -->
+      <div id="loginForm">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="you@company.com" autocomplete="email">
         </div>
-
-        <div class="content">
-            <div class="error-message" id="errorMessage"></div>
-
-            <!-- LOGIN -->
-            <div class="section active" id="loginSection">
-                <form id="loginForm">
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="loginEmail" placeholder="your@email.com" required autocomplete="email">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
-                    </div>
-
-                    <button type="submit" class="btn btn-primary" id="loginBtn">Sign In</button>
-                </form>
-
-                <div class="divider"><span>OR</span></div>
-
-                <button class="btn btn-secondary" id="openDashboardBtn">Open Dashboard</button>
-
-                <div class="text-center">
-                    <a href="#" class="link" id="signupLink">Don't have an account? Sign up</a>
-                </div>
-            </div>
-
-            <!-- LOGGED IN -->
-            <div class="section" id="loggedInSection">
-                <div class="stat-card">
-                    <div class="stat-label">Detections Today</div>
-                    <div class="stat-value" id="detectionCount">0</div>
-                    <div class="stat-description">Data leaks prevented</div>
-                </div>
-
-                <div class="user-info">
-                    <div class="user-info-row">
-                        <span class="user-info-label">Company</span>
-                        <span class="user-info-value" id="companyName">-</span>
-                    </div>
-                    <div class="user-info-row">
-                        <span class="user-info-label">User</span>
-                        <span class="user-info-value" id="userEmail">-</span>
-                    </div>
-                    <div class="user-info-row">
-                        <span class="user-info-label">Plan</span>
-                        <span class="user-info-value" id="planName">Team</span>
-                    </div>
-                </div>
-
-                <button class="btn btn-secondary" id="viewDashboardBtn">Open Dashboard</button>
-                <button class="btn btn-secondary" id="logoutBtn">Logout</button>
-
-                <div class="status-indicator">
-                    <div class="status-dot"></div>
-                    <span>Real-time monitoring active</span>
-                </div>
-            </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
         </div>
+        <button class="btn btn-primary" id="loginBtn">Sign in</button>
+        <div class="form-toggle">
+          First time? <a href="#" id="showJoinLink">Join with company code</a>
+        </div>
+      </div>
+
+      <!-- JOIN FORM (first-time employee) -->
+      <div id="joinForm" style="display:none">
+        <div class="form-group">
+          <label>Company Code</label>
+          <input type="text" id="joinCode" placeholder="e.g. AB12CD34" autocomplete="off"
+                 style="text-transform:uppercase;letter-spacing:.1em;font-weight:700;">
+        </div>
+        <div class="form-group">
+          <label>Your email</label>
+          <input type="email" id="joinEmail" placeholder="you@company.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label>Create password</label>
+          <input type="password" id="joinPassword" placeholder="••••••••" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label>Your name (optional)</label>
+          <input type="text" id="joinName" placeholder="First name">
+        </div>
+        <button class="btn btn-primary" id="joinBtn">Activate protection</button>
+        <div class="form-toggle">
+          Already set up? <a href="#" id="showLoginLink">Sign in</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ LOGGED IN ══ -->
+  <div class="section" id="mainSection">
+    <div class="tab-bar">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="settings">Settings</button>
     </div>
 
-    <script src="popup.js"></script>
+    <!-- Overview -->
+    <div class="tab-panel active content" id="tab-overview">
+
+      <!-- Inactive warning (shown if company plan expired) -->
+      <div class="inactive-banner" id="inactiveBanner" style="display:none">
+        ⚠️ Your company's subscription is inactive.<br>
+        Ask your manager to renew it to keep monitoring active.
+      </div>
+
+      <div class="stat-big">
+        <div class="stat-big-num" id="countToday">0</div>
+        <div class="stat-big-label">Data leaks blocked today</div>
+      </div>
+
+      <div class="user-card">
+        <div class="user-row">
+          <span class="user-key">Signed in as</span>
+          <span class="user-val" id="userEmail">—</span>
+        </div>
+        <div class="user-row">
+          <span class="user-key">Company</span>
+          <span class="user-val" id="companyName">—</span>
+        </div>
+      </div>
+
+      <button class="btn btn-ghost-red" id="logoutBtn">Sign out</button>
+
+      <div class="status-bar" id="statusBar">
+        <div class="status-dot-anim"></div>
+        <span class="status-text">Monitoring active</span>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="tab-panel content" id="tab-settings">
+      <div class="settings-group">
+        <div class="settings-title">Protection</div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Active monitoring</div>
+            <div class="toggle-desc">Scan AI tool inputs for sensitive data</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-monitoring" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Show alerts</div>
+            <div class="toggle-desc">Show popup when data is detected</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-alerts" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-title">Data types</div>
+        <div class="data-grid">
+          <div class="data-chip"><span class="data-chip-label">IBAN</span>
+            <label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="IBAN" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="data-chip"><span class="data-chip-label">Credit card</span>
+            <label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="CREDIT_CARD" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="data-chip"><span class="data-chip-label">Email</span>
+            <label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="EMAIL" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="data-chip"><span class="data-chip-label">NIF / CPF</span>
+            <label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="NIF" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="data-chip"><span class="data-chip-label">Phone</span>
+            <label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="PHONE" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="data-chip"><span class="data-chip-label">API Keys</span>
+            <label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="API_KEY" checked><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
 </body>
 </html>
