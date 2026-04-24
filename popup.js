@@ -1,8 +1,13 @@
-// ================================================================
-// AI Shield — Extension Popup JS v2
-// Employee-only: login, join with company code, overview, settings
-// NO billing info shown to employees
-// ================================================================
+// ============================================================
+// AI Shield — Popup JS v1.0.2
+//
+// FIXES vs v1.0.1:
+// - DASHBOARD_URL → getaishield.co
+// - user/company stored as objects (not JSON strings) — consistent
+// - Removed setInterval polling (uses onMessage instead)
+// - Tab navigation
+// - Settings persistence (monitoring, alerts, logging, data types)
+// ============================================================
 
 const API_URL       = 'https://ai-shield-backend-production.up.railway.app';
 const DASHBOARD_URL = 'https://getaishield.co';
@@ -10,8 +15,9 @@ const DASHBOARD_URL = 'https://getaishield.co';
 // ─── Init ─────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
+  loadDetectionCount();
   setupTabs();
-  setupForms();
+  setupEventListeners();
   loadSettings();
 });
 
@@ -22,49 +28,68 @@ function setupTabs() {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
-      document.getElementById('tab-' + tab.dataset.tab)?.classList.add('active');
+      const panelId = 'tab-' + tab.dataset.tab;
+      const panel = document.getElementById(panelId);
+      if (panel) panel.classList.add('active');
     });
   });
 }
 
 // ─── Auth check ───────────────────────────────────────────
 function checkAuth() {
-  chrome.storage.local.get(['authToken', 'user', 'company', 'active'], r => {
-    if (chrome.runtime.lastError || !r.authToken || !r.user) {
-      showAuthSection();
-      return;
+  chrome.storage.local.get(['authToken', 'user', 'company'], r => {
+    if (chrome.runtime.lastError) { showLogin(); return; }
+
+    // Support both object and legacy JSON-string storage
+    let user    = r.user;
+    let company = r.company;
+    if (typeof user    === 'string') { try { user    = JSON.parse(user);    } catch(e) { user    = null; } }
+    if (typeof company === 'string') { try { company = JSON.parse(company); } catch(e) { company = null; } }
+
+    if (r.authToken && user && company) {
+      showLoggedIn(user, company);
+    } else {
+      showLogin();
     }
-    showMain(r.user, r.company, r.active !== false);
-    loadMyCount();
   });
 }
 
-function showAuthSection() {
-  document.getElementById('authSection').classList.add('active');
-  document.getElementById('mainSection').classList.remove('active');
-  setHeader('Employee Protection', false);
+function showLogin() {
+  document.getElementById('loginSection').classList.add('active');
+  document.getElementById('loggedInSection').classList.remove('active');
+  setHeader('Not connected', false);
 }
 
-function showMain(user, company, active) {
-  document.getElementById('authSection').classList.remove('active');
-  document.getElementById('mainSection').classList.add('active');
+function showLoggedIn(user, company) {
+  document.getElementById('loginSection').classList.remove('active');
+  document.getElementById('loggedInSection').classList.add('active');
 
-  setHeader(active ? 'Protected' : 'Inactive', active);
+  const platform = window.location?.hostname || '';
+  setHeader(platform || 'Protected', true);
 
+  // Fill user info
   setText('userEmail',   user?.email   || '—');
   setText('companyName', company?.name || '—');
+  setText('planName',    (company?.plan || 'Trial').toUpperCase());
 
-  const banner = document.getElementById('inactiveBanner');
-  const status = document.getElementById('statusBar');
-  if (banner) banner.style.display = active ? 'none' : 'block';
-  if (status) status.style.display = active ? 'flex' : 'none';
+  // Trial days
+  if (company?.trialEndsAt) {
+    const days = Math.max(0, Math.ceil(
+      (new Date(company.trialEndsAt) - Date.now()) / 86400000
+    ));
+    setText('trialDays',  days.toString());
+    setText('trialLabel', 'Trial days left');
+  } else if (company?.plan && company.plan !== 'trial') {
+    setText('trialDays',  '∞');
+    setText('trialLabel', 'Plan active');
+  }
 }
 
 function setHeader(sub, active) {
   const dot = document.getElementById('headerDot');
   const sub_ = document.getElementById('headerSub');
   if (sub_) sub_.textContent = sub;
-  if (dot)  dot.className = 'header-dot' + (active ? '' : ' off');
+  if (dot)  dot.className = 'header-dot' + (active ? '' : ' inactive');
 }
 
 function setText(id, val) {
@@ -72,48 +97,36 @@ function setText(id, val) {
   if (el) el.textContent = val;
 }
 
-// ─── Form toggle (login ↔ join) ───────────────────────────
-function setupForms() {
-  document.getElementById('showJoinLink')?.addEventListener('click', e => {
-    e.preventDefault();
-    document.getElementById('loginForm').style.display  = 'none';
-    document.getElementById('joinForm').style.display   = 'block';
-    hideError();
-  });
+// ─── Event listeners ──────────────────────────────────────
+function setupEventListeners() {
+  // Login form
+  document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
 
-  document.getElementById('showLoginLink')?.addEventListener('click', e => {
-    e.preventDefault();
-    document.getElementById('joinForm').style.display   = 'none';
-    document.getElementById('loginForm').style.display  = 'block';
-    hideError();
-  });
+  // Dashboard buttons
+  document.getElementById('openDashboardBtn')?.addEventListener('click', openDashboard);
+  document.getElementById('viewDashboardBtn')?.addEventListener('click', openDashboard);
 
-  document.getElementById('loginBtn')?.addEventListener('click', handleLogin);
-  document.getElementById('joinBtn')?.addEventListener('click',  handleJoin);
+  // Logout
   document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
 
-  // Allow Enter key in login form
-  ['loginEmail','loginPassword'].forEach(id => {
-    document.getElementById(id)?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') handleLogin();
-    });
-  });
-
-  // Auto-uppercase company code input
-  document.getElementById('joinCode')?.addEventListener('input', e => {
-    e.target.value = e.target.value.toUpperCase();
+  // Signup link
+  document.getElementById('signupLink')?.addEventListener('click', e => {
+    e.preventDefault();
+    chrome.tabs.create({ url: `${DASHBOARD_URL}/signup.html` });
   });
 }
 
-// ─── Login (returning employee) ───────────────────────────
-async function handleLogin() {
-  const email    = document.getElementById('loginEmail')?.value.trim();
-  const password = document.getElementById('loginPassword')?.value;
+// ─── Login ────────────────────────────────────────────────
+async function handleLogin(e) {
+  e.preventDefault();
+
+  const email    = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
   const btn      = document.getElementById('loginBtn');
 
-  if (!email || !password) { showError('Please fill in all fields.'); return; }
+  if (!email || !password) { showError('Please fill in all fields'); return; }
 
-  btn.disabled = true;
+  btn.disabled    = true;
   btn.textContent = 'Signing in…';
   hideError();
 
@@ -123,130 +136,77 @@ async function handleLogin() {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ email, password }),
     });
+
     const data = await res.json();
 
     if (res.ok && data.token) {
-      saveAndShow(data);
+      // Store as plain objects (not JSON strings)
+      chrome.storage.local.set({
+        authToken: data.token,
+        user:      data.user,
+        company:   data.company,
+      }, () => {
+        if (chrome.runtime.lastError) {
+          showError('Failed to save session. Please try again.');
+          return;
+        }
+        document.getElementById('loginEmail').value    = '';
+        document.getElementById('loginPassword').value = '';
+        showLoggedIn(data.user, data.company);
+      });
     } else {
       showError(data.error || 'Incorrect email or password.');
     }
-  } catch (e) {
+  } catch (err) {
     showError('Connection error. Check your internet and try again.');
   } finally {
-    btn.disabled = false;
+    btn.disabled    = false;
     btn.textContent = 'Sign in';
   }
-}
-
-// ─── Join with company code (first time) ──────────────────
-async function handleJoin() {
-  const code     = document.getElementById('joinCode')?.value.trim();
-  const email    = document.getElementById('joinEmail')?.value.trim();
-  const password = document.getElementById('joinPassword')?.value;
-  const name     = document.getElementById('joinName')?.value.trim();
-  const btn      = document.getElementById('joinBtn');
-
-  if (!code || !email || !password) {
-    showError('Company code, email and password are required.');
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = 'Activating…';
-  hideError();
-
-  try {
-    const res  = await fetch(`${API_URL}/auth/employee/join`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ companyCode: code, email, password, name }),
-    });
-    const data = await res.json();
-
-    if (res.ok && data.token) {
-      saveAndShow(data);
-    } else {
-      showError(data.error || 'Could not activate. Check your company code.');
-    }
-  } catch (e) {
-    showError('Connection error. Check your internet and try again.');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Activate protection';
-  }
-}
-
-// ─── Save auth data and show main screen ──────────────────
-function saveAndShow(data) {
-  chrome.storage.local.set({
-    authToken: data.token,
-    user:      data.user,
-    company:   data.company,
-    active:    data.active !== false,
-  }, () => {
-    if (chrome.runtime.lastError) {
-      showError('Failed to save session. Try again.');
-      return;
-    }
-    showMain(data.user, data.company, data.active !== false);
-    loadMyCount();
-  });
 }
 
 // ─── Logout ───────────────────────────────────────────────
 function handleLogout() {
   chrome.storage.local.clear(() => {
-    showAuthSection();
-    // Reset to login form
-    document.getElementById('loginForm').style.display = 'block';
-    document.getElementById('joinForm').style.display  = 'none';
+    showLogin();
+    setText('detectionCount', '0');
   });
 }
 
-// ─── My detection count ───────────────────────────────────
-async function loadMyCount() {
-  // First load from local storage (instant)
+// ─── Detection count ──────────────────────────────────────
+function loadDetectionCount() {
   chrome.storage.local.get(['detectionCount'], r => {
-    setText('countToday', String(r.detectionCount || 0));
-  });
-
-  // Then fetch from backend for accurate daily count
-  chrome.storage.local.get(['authToken'], async r => {
-    if (!r.authToken) return;
-    try {
-      const res  = await fetch(`${API_URL}/detections/my`, {
-        headers: { Authorization: `Bearer ${r.authToken}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setText('countToday', String(data.countToday || 0));
-      }
-    } catch (e) {
-      // Use local count as fallback — already loaded above
-    }
+    setText('detectionCount', String(r.detectionCount || 0));
   });
 }
 
 // Listen for updates from content script
-chrome.runtime.onMessage.addListener(msg => {
+chrome.runtime.onMessage.addListener((msg) => {
   if (msg.action === 'updateDetectionCount') {
-    setText('countToday', String(msg.count || 0));
+    setText('detectionCount', String(msg.count || 0));
   }
 });
 
-// ─── Settings ─────────────────────────────────────────────
+// ─── Settings persistence ─────────────────────────────────
 function loadSettings() {
   chrome.storage.local.get(['settings'], r => {
     const s = r.settings || {};
+
+    // Protection toggles (default: all on)
     setToggle('toggle-monitoring', s.monitoring !== false);
     setToggle('toggle-alerts',     s.alerts     !== false);
+    setToggle('toggle-logging',    s.logging    !== false);
+
+    // Data type toggles (default: all on)
     document.querySelectorAll('.data-toggle').forEach(cb => {
-      cb.checked = s.dataTypes?.[cb.dataset.type] !== false;
+      const type = cb.dataset.type;
+      cb.checked = s.dataTypes?.[type] !== false;
     });
   });
 
-  ['toggle-monitoring','toggle-alerts'].forEach(id => {
-    document.getElementById(id)?.addEventListener('change', saveSettings);
+  // Save on any toggle change
+  document.querySelectorAll('#toggle-monitoring, #toggle-alerts, #toggle-logging').forEach(cb => {
+    cb.addEventListener('change', saveSettings);
   });
   document.querySelectorAll('.data-toggle').forEach(cb => {
     cb.addEventListener('change', saveSettings);
@@ -258,13 +218,15 @@ function saveSettings() {
   document.querySelectorAll('.data-toggle').forEach(cb => {
     dataTypes[cb.dataset.type] = cb.checked;
   });
-  chrome.storage.local.set({
-    settings: {
-      monitoring: document.getElementById('toggle-monitoring')?.checked !== false,
-      alerts:     document.getElementById('toggle-alerts')?.checked     !== false,
-      dataTypes,
-    }
-  });
+
+  const settings = {
+    monitoring: document.getElementById('toggle-monitoring')?.checked !== false,
+    alerts:     document.getElementById('toggle-alerts')?.checked     !== false,
+    logging:    document.getElementById('toggle-logging')?.checked    !== false,
+    dataTypes,
+  };
+
+  chrome.storage.local.set({ settings });
 }
 
 function setToggle(id, val) {
@@ -272,11 +234,17 @@ function setToggle(id, val) {
   if (el) el.checked = val;
 }
 
-// ─── Helpers ──────────────────────────────────────────────
+// ─── Dashboard ────────────────────────────────────────────
+function openDashboard() {
+  chrome.tabs.create({ url: `${DASHBOARD_URL}/dashboard.html` });
+}
+
+// ─── UI helpers ───────────────────────────────────────────
 function showError(msg) {
-  const el = document.getElementById('errorMsg');
+  const el = document.getElementById('errorMessage');
   if (el) { el.textContent = msg; el.classList.add('show'); }
 }
 function hideError() {
-  document.getElementById('errorMsg')?.classList.remove('show');
+  const el = document.getElementById('errorMessage');
+  if (el) el.classList.remove('show');
 }
