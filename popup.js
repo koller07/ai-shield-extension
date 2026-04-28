@@ -1,95 +1,97 @@
 // ============================================================
-// AI Shield — Popup JS v1.0.2
-//
-// FIXES vs v1.0.1:
-// - DASHBOARD_URL → getaishield.co
-// - user/company stored as objects (not JSON strings) — consistent
-// - Removed setInterval polling (uses onMessage instead)
-// - Tab navigation
-// - Settings persistence (monitoring, alerts, logging, data types)
+// AI Shield — Popup JS v1.0.4
+// Dois fluxos: Login (utilizador existente) + Join (company code)
 // ============================================================
 
 const API_URL       = 'https://ai-shield-backend-production.up.railway.app';
 const DASHBOARD_URL = 'https://getaishield.co';
 
-// ─── Init ─────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
-  loadDetectionCount();
   setupTabs();
-  setupEventListeners();
+  setupKeyboard();
   loadSettings();
 });
 
-// ─── Tab navigation ───────────────────────────────────────
+// ── Auth toggle (Login / Join) ────────────────────────────
+function showAuthTab(tab) {
+  document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+  document.getElementById('tabJoin').classList.toggle('active',  tab === 'join');
+  document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('joinForm').style.display  = tab === 'join'  ? 'block' : 'none';
+  hideError();
+}
+
+// ── Tab navigation (Overview / Settings) ─────────────────
 function setupTabs() {
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
-      const panelId = 'tab-' + tab.dataset.tab;
-      const panel = document.getElementById(panelId);
-      if (panel) panel.classList.add('active');
+      document.getElementById('tab-' + tab.dataset.tab)?.classList.add('active');
     });
   });
 }
 
-// ─── Auth check ───────────────────────────────────────────
-function checkAuth() {
-  chrome.storage.local.get(['authToken', 'user', 'company'], r => {
-    if (chrome.runtime.lastError) { showLogin(); return; }
-
-    // Support both object and legacy JSON-string storage
-    let user    = r.user;
-    let company = r.company;
-    if (typeof user    === 'string') { try { user    = JSON.parse(user);    } catch(e) { user    = null; } }
-    if (typeof company === 'string') { try { company = JSON.parse(company); } catch(e) { company = null; } }
-
-    if (r.authToken && user && company) {
-      showLoggedIn(user, company);
-    } else {
-      showLogin();
-    }
+// ── Keyboard: Enter submits ───────────────────────────────
+function setupKeyboard() {
+  ['loginEmail','loginPassword'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleLogin();
+    });
+  });
+  ['joinCode','joinEmail','joinPassword','joinName'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleJoin();
+    });
+  });
+  // Auto-uppercase company code
+  document.getElementById('joinCode')?.addEventListener('input', e => {
+    const pos = e.target.selectionStart;
+    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    e.target.setSelectionRange(pos, pos);
   });
 }
 
-function showLogin() {
-  document.getElementById('loginSection').classList.add('active');
-  document.getElementById('loggedInSection').classList.remove('active');
-  setHeader('Not connected', false);
+// ── Check auth on load ────────────────────────────────────
+function checkAuth() {
+  chrome.storage.local.get(['authToken', 'user', 'company', 'active'], r => {
+    if (chrome.runtime.lastError || !r.authToken || !r.user) {
+      showAuthSection();
+      return;
+    }
+    showMain(r.user, r.company, r.active !== false);
+    loadMyCount();
+  });
 }
 
-function showLoggedIn(user, company) {
-  document.getElementById('loginSection').classList.remove('active');
-  document.getElementById('loggedInSection').classList.add('active');
+function showAuthSection() {
+  document.getElementById('authSection').classList.add('active');
+  document.getElementById('mainSection').classList.remove('active');
+  setHeader('Employee Protection', false);
+}
 
-  const platform = window.location?.hostname || '';
-  setHeader(platform || 'Protected', true);
+function showMain(user, company, active) {
+  document.getElementById('authSection').classList.remove('active');
+  document.getElementById('mainSection').classList.add('active');
 
-  // Fill user info
+  setHeader(active ? 'Protected' : 'Inactive', active);
   setText('userEmail',   user?.email   || '—');
   setText('companyName', company?.name || '—');
-  setText('planName',    (company?.plan || 'Trial').toUpperCase());
 
-  // Trial days
-  if (company?.trialEndsAt) {
-    const days = Math.max(0, Math.ceil(
-      (new Date(company.trialEndsAt) - Date.now()) / 86400000
-    ));
-    setText('trialDays',  days.toString());
-    setText('trialLabel', 'Trial days left');
-  } else if (company?.plan && company.plan !== 'trial') {
-    setText('trialDays',  '∞');
-    setText('trialLabel', 'Plan active');
-  }
+  const banner = document.getElementById('inactiveBanner');
+  const status = document.getElementById('statusBar');
+  if (banner) banner.style.display = active ? 'none'  : 'block';
+  if (status) status.style.display = active ? 'flex'  : 'none';
 }
 
 function setHeader(sub, active) {
-  const dot = document.getElementById('headerDot');
+  const dot  = document.getElementById('headerDot');
   const sub_ = document.getElementById('headerSub');
   if (sub_) sub_.textContent = sub;
-  if (dot)  dot.className = 'header-dot' + (active ? '' : ' inactive');
+  if (dot)  dot.className = 'header-dot' + (active ? '' : ' off');
 }
 
 function setText(id, val) {
@@ -97,36 +99,15 @@ function setText(id, val) {
   if (el) el.textContent = val;
 }
 
-// ─── Event listeners ──────────────────────────────────────
-function setupEventListeners() {
-  // Login form
-  document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
-
-  // Dashboard buttons
-  document.getElementById('openDashboardBtn')?.addEventListener('click', openDashboard);
-  document.getElementById('viewDashboardBtn')?.addEventListener('click', openDashboard);
-
-  // Logout
-  document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
-
-  // Signup link
-  document.getElementById('signupLink')?.addEventListener('click', e => {
-    e.preventDefault();
-    chrome.tabs.create({ url: `${DASHBOARD_URL}/signup.html` });
-  });
-}
-
-// ─── Login ────────────────────────────────────────────────
-async function handleLogin(e) {
-  e.preventDefault();
-
-  const email    = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
+// ── Login (existing employee) ─────────────────────────────
+async function handleLogin() {
+  const email    = document.getElementById('loginEmail')?.value.trim();
+  const password = document.getElementById('loginPassword')?.value;
   const btn      = document.getElementById('loginBtn');
 
-  if (!email || !password) { showError('Please fill in all fields'); return; }
+  if (!email || !password) { showError('Please fill in all fields.'); return; }
 
-  btn.disabled    = true;
+  btn.disabled = true;
   btn.textContent = 'Signing in…';
   hideError();
 
@@ -136,77 +117,128 @@ async function handleLogin(e) {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ email, password }),
     });
-
     const data = await res.json();
 
     if (res.ok && data.token) {
-      // Store as plain objects (not JSON strings)
-      chrome.storage.local.set({
-        authToken: data.token,
-        user:      data.user,
-        company:   data.company,
-      }, () => {
-        if (chrome.runtime.lastError) {
-          showError('Failed to save session. Please try again.');
-          return;
-        }
-        document.getElementById('loginEmail').value    = '';
-        document.getElementById('loginPassword').value = '';
-        showLoggedIn(data.user, data.company);
-      });
+      saveAndShow(data);
     } else {
       showError(data.error || 'Incorrect email or password.');
     }
-  } catch (err) {
+  } catch (e) {
     showError('Connection error. Check your internet and try again.');
   } finally {
-    btn.disabled    = false;
+    btn.disabled = false;
     btn.textContent = 'Sign in';
   }
 }
 
-// ─── Logout ───────────────────────────────────────────────
+// ── Join with company code (first time) ──────────────────
+async function handleJoin() {
+  const code     = document.getElementById('joinCode')?.value.trim();
+  const email    = document.getElementById('joinEmail')?.value.trim();
+  const password = document.getElementById('joinPassword')?.value;
+  const name     = document.getElementById('joinName')?.value.trim();
+  const btn      = document.getElementById('joinBtn');
+
+  if (!code)     { showError('Company code is required.'); return; }
+  if (code.length < 6) { showError('Company code must be 6-8 characters.'); return; }
+  if (!email)    { showError('Email is required.'); return; }
+  if (!password) { showError('Password is required.'); return; }
+  if (password.length < 8) { showError('Password must be at least 8 characters.'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Activating…';
+  hideError();
+
+  try {
+    const res  = await fetch(`${API_URL}/auth/employee/join`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ companyCode: code, email, password, name }),
+    });
+    const data = await res.json();
+
+    if (res.ok && data.token) {
+      saveAndShow(data);
+    } else {
+      showError(data.error || 'Could not activate. Check your company code and try again.');
+    }
+  } catch (e) {
+    showError('Connection error. Check your internet and try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Activate protection';
+  }
+}
+
+// ── Save auth + show main screen ─────────────────────────
+function saveAndShow(data) {
+  chrome.storage.local.set({
+    authToken: data.token,
+    user:      data.user,
+    company:   data.company,
+    active:    data.active !== false,
+  }, () => {
+    if (chrome.runtime.lastError) {
+      showError('Failed to save session. Try again.');
+      return;
+    }
+    showMain(data.user, data.company, data.active !== false);
+    loadMyCount();
+  });
+}
+
+// ── Logout ────────────────────────────────────────────────
 function handleLogout() {
   chrome.storage.local.clear(() => {
-    showLogin();
-    setText('detectionCount', '0');
+    showAuthSection();
+    showAuthTab('login');
+    setText('countToday', '0');
   });
 }
 
-// ─── Detection count ──────────────────────────────────────
-function loadDetectionCount() {
+// ── Detection count ───────────────────────────────────────
+function loadMyCount() {
+  // Local count first (instant)
   chrome.storage.local.get(['detectionCount'], r => {
-    setText('detectionCount', String(r.detectionCount || 0));
+    setText('countToday', String(r.detectionCount || 0));
+  });
+
+  // Fetch from backend
+  chrome.storage.local.get(['authToken'], async r => {
+    if (!r.authToken) return;
+    try {
+      const res = await fetch(`${API_URL}/detections/my`, {
+        headers: { Authorization: `Bearer ${r.authToken}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setText('countToday', String(data.countToday || 0));
+      }
+    } catch (e) { /* use local count */ }
   });
 }
 
-// Listen for updates from content script
-chrome.runtime.onMessage.addListener((msg) => {
+// Listen for detection updates from content script
+chrome.runtime.onMessage.addListener(msg => {
   if (msg.action === 'updateDetectionCount') {
-    setText('detectionCount', String(msg.count || 0));
+    setText('countToday', String(msg.count || 0));
   }
 });
 
-// ─── Settings persistence ─────────────────────────────────
+// ── Settings ──────────────────────────────────────────────
 function loadSettings() {
   chrome.storage.local.get(['settings'], r => {
     const s = r.settings || {};
-
-    // Protection toggles (default: all on)
     setToggle('toggle-monitoring', s.monitoring !== false);
     setToggle('toggle-alerts',     s.alerts     !== false);
-    setToggle('toggle-logging',    s.logging    !== false);
-
-    // Data type toggles (default: all on)
     document.querySelectorAll('.data-toggle').forEach(cb => {
-      const type = cb.dataset.type;
-      cb.checked = s.dataTypes?.[type] !== false;
+      cb.checked = s.dataTypes?.[cb.dataset.type] !== false;
     });
   });
 
-  // Save on any toggle change
-  document.querySelectorAll('#toggle-monitoring, #toggle-alerts, #toggle-logging').forEach(cb => {
-    cb.addEventListener('change', saveSettings);
+  ['toggle-monitoring','toggle-alerts'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', saveSettings);
   });
   document.querySelectorAll('.data-toggle').forEach(cb => {
     cb.addEventListener('change', saveSettings);
@@ -218,15 +250,13 @@ function saveSettings() {
   document.querySelectorAll('.data-toggle').forEach(cb => {
     dataTypes[cb.dataset.type] = cb.checked;
   });
-
-  const settings = {
-    monitoring: document.getElementById('toggle-monitoring')?.checked !== false,
-    alerts:     document.getElementById('toggle-alerts')?.checked     !== false,
-    logging:    document.getElementById('toggle-logging')?.checked    !== false,
-    dataTypes,
-  };
-
-  chrome.storage.local.set({ settings });
+  chrome.storage.local.set({
+    settings: {
+      monitoring: document.getElementById('toggle-monitoring')?.checked !== false,
+      alerts:     document.getElementById('toggle-alerts')?.checked     !== false,
+      dataTypes,
+    }
+  });
 }
 
 function setToggle(id, val) {
@@ -234,17 +264,11 @@ function setToggle(id, val) {
   if (el) el.checked = val;
 }
 
-// ─── Dashboard ────────────────────────────────────────────
-function openDashboard() {
-  chrome.tabs.create({ url: `${DASHBOARD_URL}/dashboard.html` });
-}
-
-// ─── UI helpers ───────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────
 function showError(msg) {
-  const el = document.getElementById('errorMessage');
+  const el = document.getElementById('errorMsg');
   if (el) { el.textContent = msg; el.classList.add('show'); }
 }
 function hideError() {
-  const el = document.getElementById('errorMessage');
-  if (el) el.classList.remove('show');
+  document.getElementById('errorMsg')?.classList.remove('show');
 }
