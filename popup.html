@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Shield</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 320px;
+      min-height: 420px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0D1117;
+      color: #fff;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: #0D1117;
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .header-logo {
+      width: 32px; height: 32px; flex-shrink: 0;
+    }
+    .header-logo img { width: 32px; height: 32px; border-radius: 7px; display: block; }
+    .header-title { font-size: 13.5px; font-weight: 700; color: white; }
+    .header-sub   { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 1px; }
+    .header-dot {
+      margin-left: auto; width: 7px; height: 7px; border-radius: 50%;
+      background: #059669; flex-shrink: 0;
+      box-shadow: 0 0 0 2px rgba(5,150,105,.25);
+    }
+    .header-dot.off { background: #374151; box-shadow: none; }
+
+    /* ── SECTIONS ── */
+    .section { display: none; }
+    .section.active { display: block; }
+    .content { padding: 16px; }
+
+    /* ── TABS ── */
+    .tab-bar { display: flex; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .tab {
+      flex: 1; padding: 9px 0; font-size: 12px; font-weight: 500;
+      color: rgba(255,255,255,.4); background: none; border: none;
+      cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+      font-family: inherit; transition: color .15s;
+    }
+    .tab.active { color: white; border-bottom-color: #0052CC; }
+    .tab:hover:not(.active) { color: rgba(255,255,255,.7); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── ERROR ── */
+    .error-msg {
+      display: none; background: rgba(217,45,32,.1);
+      border: 1px solid rgba(217,45,32,.25); color: #FCA5A5;
+      padding: 9px 12px; border-radius: 8px; font-size: 12px;
+      margin-bottom: 12px; line-height: 1.45;
+    }
+    .error-msg.show { display: block; }
+
+    /* ── AUTH TOGGLE ── */
+    .auth-toggle {
+      display: flex; gap: 0;
+      background: rgba(255,255,255,.06);
+      border-radius: 9px; padding: 3px;
+      margin-bottom: 16px;
+    }
+    .auth-tab {
+      flex: 1; padding: 7px 0; font-size: 12px; font-weight: 500;
+      color: rgba(255,255,255,.5); background: none; border: none;
+      cursor: pointer; border-radius: 7px; font-family: inherit;
+      transition: all .15s; text-align: center;
+    }
+    .auth-tab.active {
+      background: #0052CC; color: white;
+    }
+
+    /* ── FORMS ── */
+    .form-group { margin-bottom: 11px; }
+    .form-group label {
+      display: block; font-size: 10.5px; font-weight: 600;
+      color: rgba(255,255,255,.45); text-transform: uppercase;
+      letter-spacing: .07em; margin-bottom: 5px;
+    }
+    .form-group input {
+      width: 100%; padding: 8px 11px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 7px; color: white; font-size: 13px; font-family: inherit;
+      outline: none; transition: border-color .15s;
+    }
+    .form-group input:focus { border-color: #0052CC; background: rgba(0,82,204,.08); }
+    .form-group input::placeholder { color: rgba(255,255,255,.2); }
+    .form-group input.code-input {
+      text-transform: uppercase; letter-spacing: .15em;
+      font-weight: 700; font-size: 14px; text-align: center;
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      width: 100%; padding: 9px 14px; border-radius: 8px; font-size: 13px;
+      font-weight: 600; cursor: pointer; border: none; font-family: inherit;
+      transition: all .15s; text-align: center;
+    }
+    .btn-primary { background: #0052CC; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #0040A8; }
+    .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-secondary {
+      background: rgba(255,255,255,.06); color: rgba(255,255,255,.75);
+      border: 1px solid rgba(255,255,255,.1); margin-top: 8px;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,.1); }
+    .btn-ghost-red {
+      background: transparent; color: rgba(252,165,165,.7);
+      border: 1px solid rgba(217,45,32,.2); margin-top: 8px; font-size: 12px;
+    }
+    .btn-ghost-red:hover { background: rgba(217,45,32,.08); }
+
+    /* ── CODE HINT ── */
+    .code-hint {
+      font-size: 11px; color: rgba(255,255,255,.35);
+      text-align: center; margin-top: -6px; margin-bottom: 10px;
+    }
+
+    /* ── STATS ── */
+    .stat-big {
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 12px;
+    }
+    .stat-big-num { font-size: 40px; font-weight: 800; color: #60A5FA; line-height: 1; }
+    .stat-big-label { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 5px; }
+
+    .user-card {
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 9px; padding: 11px; margin-bottom: 12px;
+    }
+    .user-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 4px 0; font-size: 12px;
+    }
+    .user-row + .user-row {
+      border-top: 1px solid rgba(255,255,255,.05); margin-top: 5px; padding-top: 7px;
+    }
+    .user-key { color: rgba(255,255,255,.4); }
+    .user-val { color: white; font-weight: 500; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+
+    /* ── INACTIVE BANNER ── */
+    .inactive-banner {
+      background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.2);
+      border-radius: 8px; padding: 10px 12px; font-size: 12px;
+      color: #FCD34D; line-height: 1.5; margin-bottom: 12px;
+    }
+
+    /* ── STATUS ── */
+    .status-bar {
+      display: flex; align-items: center; gap: 8px; padding: 8px 11px;
+      background: rgba(5,150,105,.08); border: 1px solid rgba(5,150,105,.2);
+      border-radius: 8px; margin-top: 11px;
+    }
+    .status-dot-anim {
+      width: 6px; height: 6px; border-radius: 50%; background: #059669;
+      animation: pulse 2s ease infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
+    .status-text { font-size: 12px; color: #6EE7B7; font-weight: 500; }
+
+    /* ── SETTINGS ── */
+    .settings-title {
+      font-size: 10px; font-weight: 600; color: rgba(255,255,255,.4);
+      text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px;
+    }
+    .settings-group { margin-bottom: 14px; }
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-label { font-size: 12.5px; color: rgba(255,255,255,.8); }
+    .toggle-desc  { font-size: 10.5px; color: rgba(255,255,255,.3); margin-top: 1px; }
+    .toggle { position: relative; width: 32px; height: 18px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background: rgba(255,255,255,.15); border-radius: 9px; transition: background .2s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute; width: 13px; height: 13px;
+      left: 2.5px; top: 2.5px; background: white; border-radius: 50%; transition: transform .2s;
+    }
+    .toggle input:checked + .toggle-slider { background: #0052CC; }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(13px); }
+    .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .data-chip {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 9px; background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.07); border-radius: 6px;
+    }
+    .data-chip-label { font-size: 11.5px; color: rgba(255,255,255,.7); }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-logo">
+      <img src="icons/icon128.png" alt="AI Shield">
+    </div>
+    <div>
+      <div class="header-title">AI Shield</div>
+      <div class="header-sub" id="headerSub">Employee Protection</div>
+    </div>
+    <div class="header-dot off" id="headerDot"></div>
+  </div>
+
+  <!-- ══ AUTH SECTION ══ -->
+  <div class="section active" id="authSection">
+    <div class="content">
+
+      <!-- Toggle Login / Join -->
+      <div class="auth-toggle">
+        <button class="auth-tab active" id="tabLogin" onclick="showAuthTab('login')">Sign in</button>
+        <button class="auth-tab" id="tabJoin" onclick="showAuthTab('join')">Join with code</button>
+      </div>
+
+      <div class="error-msg" id="errorMsg"></div>
+
+      <!-- LOGIN FORM -->
+      <div id="loginForm">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="you@company.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">Sign in</button>
+      </div>
+
+      <!-- JOIN FORM -->
+      <div id="joinForm" style="display:none">
+        <div class="form-group">
+          <label>Company Code</label>
+          <input type="text" id="joinCode" class="code-input" placeholder="AB12CD34" autocomplete="off" maxlength="8">
+        </div>
+        <div class="code-hint">Ask your manager for the company code</div>
+        <div class="form-group">
+          <label>Your email</label>
+          <input type="email" id="joinEmail" placeholder="you@company.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label>Create password</label>
+          <input type="password" id="joinPassword" placeholder="Min. 8 characters" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label>Your name (optional)</label>
+          <input type="text" id="joinName" placeholder="First name">
+        </div>
+        <button class="btn btn-primary" id="joinBtn" onclick="handleJoin()">Activate protection</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ MAIN SECTION (logged in) ══ -->
+  <div class="section" id="mainSection">
+    <div class="tab-bar">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="settings">Settings</button>
+    </div>
+
+    <!-- Overview -->
+    <div class="tab-panel active content" id="tab-overview">
+
+      <div class="inactive-banner" id="inactiveBanner" style="display:none">
+        ⚠️ Your company's subscription is inactive.<br>
+        Contact your manager to renew it.
+      </div>
+
+      <div class="stat-big">
+        <div class="stat-big-num" id="countToday">0</div>
+        <div class="stat-big-label">Data leaks blocked today</div>
+      </div>
+
+      <div class="user-card">
+        <div class="user-row">
+          <span class="user-key">Signed in as</span>
+          <span class="user-val" id="userEmail">—</span>
+        </div>
+        <div class="user-row">
+          <span class="user-key">Company</span>
+          <span class="user-val" id="companyName">—</span>
+        </div>
+      </div>
+
+      <button class="btn btn-ghost-red" id="logoutBtn" onclick="handleLogout()">Sign out</button>
+
+      <div class="status-bar" id="statusBar">
+        <div class="status-dot-anim"></div>
+        <span class="status-text">Monitoring active</span>
+      </div>
+
+    </div>
+
+    <!-- Settings -->
+    <div class="tab-panel content" id="tab-settings">
+      <div class="settings-group">
+        <div class="settings-title">Protection</div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Active monitoring</div>
+            <div class="toggle-desc">Scan AI tool inputs</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="toggle-monitoring" checked><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Show alerts</div>
+            <div class="toggle-desc">Popup when data detected</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="toggle-alerts" checked><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+      <div class="settings-group">
+        <div class="settings-title">Data types</div>
+        <div class="data-grid">
+          <div class="data-chip"><span class="data-chip-label">IBAN</span><label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="IBAN" checked><span class="toggle-slider"></span></label></div>
+          <div class="data-chip"><span class="data-chip-label">Credit card</span><label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="CREDIT_CARD" checked><span class="toggle-slider"></span></label></div>
+          <div class="data-chip"><span class="data-chip-label">Email</span><label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="EMAIL" checked><span class="toggle-slider"></span></label></div>
+          <div class="data-chip"><span class="data-chip-label">NIF / CPF</span><label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="NIF" checked><span class="toggle-slider"></span></label></div>
+          <div class="data-chip"><span class="data-chip-label">Phone</span><label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="PHONE" checked><span class="toggle-slider"></span></label></div>
+          <div class="data-chip"><span class="data-chip-label">API Keys</span><label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="API_KEY" checked><span class="toggle-slider"></span></label></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
