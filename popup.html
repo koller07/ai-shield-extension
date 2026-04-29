@@ -9,7 +9,7 @@
 
     body {
       width: 320px;
-      min-height: 420px;
+      min-height: 460px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #0D1117;
       color: #fff;
@@ -23,16 +23,13 @@
       border-bottom: 1px solid rgba(255,255,255,.08);
       display: flex; align-items: center; gap: 10px;
     }
-    .header-logo {
-      width: 32px; height: 32px; flex-shrink: 0;
-    }
+    .header-logo { width: 32px; height: 32px; flex-shrink: 0; }
     .header-logo img { width: 32px; height: 32px; border-radius: 7px; display: block; }
     .header-title { font-size: 13.5px; font-weight: 700; color: white; }
     .header-sub   { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 1px; }
     .header-dot {
       margin-left: auto; width: 7px; height: 7px; border-radius: 50%;
-      background: #059669; flex-shrink: 0;
-      box-shadow: 0 0 0 2px rgba(5,150,105,.25);
+      background: #059669; flex-shrink: 0; box-shadow: 0 0 0 2px rgba(5,150,105,.25);
     }
     .header-dot.off { background: #374151; box-shadow: none; }
 
@@ -41,7 +38,65 @@
     .section.active { display: block; }
     .content { padding: 16px; }
 
-    /* ── TABS ── */
+    /* ── INTRO TEXT ── */
+    .intro-title {
+      font-size: 14px; font-weight: 600; color: white; margin-bottom: 4px;
+    }
+    .intro-sub {
+      font-size: 12px; color: rgba(255,255,255,.5); margin-bottom: 18px; line-height: 1.5;
+    }
+
+    /* ── ERROR ── */
+    .error-msg {
+      display: none; background: rgba(217,45,32,.1);
+      border: 1px solid rgba(217,45,32,.25); color: #FCA5A5;
+      padding: 9px 12px; border-radius: 8px; font-size: 12px;
+      margin-bottom: 12px; line-height: 1.45;
+    }
+    .error-msg.show { display: block; }
+
+    /* ── FORMS ── */
+    .form-group { margin-bottom: 11px; }
+    .form-group label {
+      display: block; font-size: 10.5px; font-weight: 600;
+      color: rgba(255,255,255,.45); text-transform: uppercase;
+      letter-spacing: .07em; margin-bottom: 5px;
+    }
+    .form-group input {
+      width: 100%; padding: 9px 11px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 7px; color: white; font-size: 13px; font-family: inherit;
+      outline: none; transition: border-color .15s;
+    }
+    .form-group input:focus { border-color: #0052CC; background: rgba(0,82,204,.08); }
+    .form-group input::placeholder { color: rgba(255,255,255,.2); }
+    .form-group input.code-input {
+      text-transform: uppercase; letter-spacing: .15em;
+      font-weight: 700; font-size: 14px; text-align: center;
+    }
+    .code-hint {
+      font-size: 10.5px; color: rgba(255,255,255,.35);
+      text-align: center; margin-top: -4px; margin-bottom: 11px;
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      width: 100%; padding: 10px 14px; border-radius: 8px; font-size: 13px;
+      font-weight: 600; cursor: pointer; border: none; font-family: inherit;
+      transition: all .15s; text-align: center; margin-top: 4px;
+    }
+    .btn-primary { background: #0052CC; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #0040A8; }
+    .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-ghost-red {
+      background: transparent; color: rgba(252,165,165,.7);
+      border: 1px solid rgba(217,45,32,.2); font-size: 12px;
+      padding: 8px 14px; margin-top: 8px;
+      width: 100%; cursor: pointer; font-family: inherit; border-radius: 8px;
+    }
+    .btn-ghost-red:hover { background: rgba(217,45,32,.08); }
+
+    /* ── TABS (after login) ── */
     .tab-bar { display: flex; border-bottom: 1px solid rgba(255,255,255,.08); }
     .tab {
       flex: 1; padding: 9px 0; font-size: 12px; font-weight: 500;
@@ -53,78 +108,6 @@
     .tab:hover:not(.active) { color: rgba(255,255,255,.7); }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
-
-    /* ── ERROR ── */
-    .error-msg {
-      display: none; background: rgba(217,45,32,.1);
-      border: 1px solid rgba(217,45,32,.25); color: #FCA5A5;
-      padding: 9px 12px; border-radius: 8px; font-size: 12px;
-      margin-bottom: 12px; line-height: 1.45;
-    }
-    .error-msg.show { display: block; }
-
-    /* ── AUTH TOGGLE ── */
-    .auth-toggle {
-      display: flex; gap: 0;
-      background: rgba(255,255,255,.06);
-      border-radius: 9px; padding: 3px;
-      margin-bottom: 16px;
-    }
-    .auth-tab {
-      flex: 1; padding: 7px 0; font-size: 12px; font-weight: 500;
-      color: rgba(255,255,255,.5); background: none; border: none;
-      cursor: pointer; border-radius: 7px; font-family: inherit;
-      transition: all .15s; text-align: center;
-    }
-    .auth-tab.active {
-      background: #0052CC; color: white;
-    }
-
-    /* ── FORMS ── */
-    .form-group { margin-bottom: 11px; }
-    .form-group label {
-      display: block; font-size: 10.5px; font-weight: 600;
-      color: rgba(255,255,255,.45); text-transform: uppercase;
-      letter-spacing: .07em; margin-bottom: 5px;
-    }
-    .form-group input {
-      width: 100%; padding: 8px 11px;
-      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
-      border-radius: 7px; color: white; font-size: 13px; font-family: inherit;
-      outline: none; transition: border-color .15s;
-    }
-    .form-group input:focus { border-color: #0052CC; background: rgba(0,82,204,.08); }
-    .form-group input::placeholder { color: rgba(255,255,255,.2); }
-    .form-group input.code-input {
-      text-transform: uppercase; letter-spacing: .15em;
-      font-weight: 700; font-size: 14px; text-align: center;
-    }
-
-    /* ── BUTTONS ── */
-    .btn {
-      width: 100%; padding: 9px 14px; border-radius: 8px; font-size: 13px;
-      font-weight: 600; cursor: pointer; border: none; font-family: inherit;
-      transition: all .15s; text-align: center;
-    }
-    .btn-primary { background: #0052CC; color: white; }
-    .btn-primary:hover:not(:disabled) { background: #0040A8; }
-    .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
-    .btn-secondary {
-      background: rgba(255,255,255,.06); color: rgba(255,255,255,.75);
-      border: 1px solid rgba(255,255,255,.1); margin-top: 8px;
-    }
-    .btn-secondary:hover { background: rgba(255,255,255,.1); }
-    .btn-ghost-red {
-      background: transparent; color: rgba(252,165,165,.7);
-      border: 1px solid rgba(217,45,32,.2); margin-top: 8px; font-size: 12px;
-    }
-    .btn-ghost-red:hover { background: rgba(217,45,32,.08); }
-
-    /* ── CODE HINT ── */
-    .code-hint {
-      font-size: 11px; color: rgba(255,255,255,.35);
-      text-align: center; margin-top: -6px; margin-bottom: 10px;
-    }
 
     /* ── STATS ── */
     .stat-big {
@@ -147,13 +130,6 @@
     }
     .user-key { color: rgba(255,255,255,.4); }
     .user-val { color: white; font-weight: 500; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
-
-    /* ── INACTIVE BANNER ── */
-    .inactive-banner {
-      background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.2);
-      border-radius: 8px; padding: 10px 12px; font-size: 12px;
-      color: #FCD34D; line-height: 1.5; margin-bottom: 12px;
-    }
 
     /* ── STATUS ── */
     .status-bar {
@@ -193,13 +169,6 @@
     }
     .toggle input:checked + .toggle-slider { background: #0052CC; }
     .toggle input:checked + .toggle-slider::before { transform: translateX(13px); }
-    .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-    .data-chip {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 6px 9px; background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.07); border-radius: 6px;
-    }
-    .data-chip-label { font-size: 11.5px; color: rgba(255,255,255,.7); }
   </style>
 </head>
 <body>
@@ -216,57 +185,39 @@
     <div class="header-dot off" id="headerDot"></div>
   </div>
 
-  <!-- ══ AUTH SECTION ══ -->
+  <!-- ══ AUTH SECTION (single form) ══ -->
   <div class="section active" id="authSection">
     <div class="content">
 
-      <!-- Toggle Login / Join -->
-      <div class="auth-toggle">
-        <button class="auth-tab active" id="tabLogin" onclick="showAuthTab('login')">Sign in</button>
-        <button class="auth-tab" id="tabJoin" onclick="showAuthTab('join')">Join with code</button>
-      </div>
+      <div class="intro-title">Activate your protection</div>
+      <div class="intro-sub">Enter your details and the company code from your manager.</div>
 
       <div class="error-msg" id="errorMsg"></div>
 
-      <!-- LOGIN FORM -->
-      <div id="loginForm">
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="loginEmail" placeholder="you@company.com" autocomplete="email">
-        </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
-        </div>
-        <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">Sign in</button>
+      <div class="form-group">
+        <label>Your name</label>
+        <input type="text" id="authName" placeholder="John Doe" autocomplete="name">
       </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="authEmail" placeholder="you@company.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="authPassword" placeholder="Min. 8 characters" autocomplete="current-password">
+      </div>
+      <div class="form-group">
+        <label>Company code</label>
+        <input type="text" id="authCode" class="code-input" placeholder="AB12CD34" autocomplete="off" maxlength="8">
+      </div>
+      <div class="code-hint">Ask your manager for the company code</div>
 
-      <!-- JOIN FORM -->
-      <div id="joinForm" style="display:none">
-        <div class="form-group">
-          <label>Company Code</label>
-          <input type="text" id="joinCode" class="code-input" placeholder="AB12CD34" autocomplete="off" maxlength="8">
-        </div>
-        <div class="code-hint">Ask your manager for the company code</div>
-        <div class="form-group">
-          <label>Your email</label>
-          <input type="email" id="joinEmail" placeholder="you@company.com" autocomplete="email">
-        </div>
-        <div class="form-group">
-          <label>Create password</label>
-          <input type="password" id="joinPassword" placeholder="Min. 8 characters" autocomplete="new-password">
-        </div>
-        <div class="form-group">
-          <label>Your name (optional)</label>
-          <input type="text" id="joinName" placeholder="First name">
-        </div>
-        <button class="btn btn-primary" id="joinBtn" onclick="handleJoin()">Activate protection</button>
-      </div>
+      <button class="btn btn-primary" id="authBtn">Activate protection</button>
 
     </div>
   </div>
 
-  <!-- ══ MAIN SECTION (logged in) ══ -->
+  <!-- ══ MAIN SECTION (after auth) ══ -->
   <div class="section" id="mainSection">
     <div class="tab-bar">
       <button class="tab active" data-tab="overview">Overview</button>
@@ -276,14 +227,9 @@
     <!-- Overview -->
     <div class="tab-panel active content" id="tab-overview">
 
-      <div class="inactive-banner" id="inactiveBanner" style="display:none">
-        ⚠️ Your company's subscription is inactive.<br>
-        Contact your manager to renew it.
-      </div>
-
       <div class="stat-big">
         <div class="stat-big-num" id="countToday">0</div>
-        <div class="stat-big-label">Data leaks blocked today</div>
+        <div class="stat-big-label">Data leaks detected today</div>
       </div>
 
       <div class="user-card">
@@ -297,9 +243,9 @@
         </div>
       </div>
 
-      <button class="btn btn-ghost-red" id="logoutBtn" onclick="handleLogout()">Sign out</button>
+      <button class="btn-ghost-red" id="logoutBtn">Sign out</button>
 
-      <div class="status-bar" id="statusBar">
+      <div class="status-bar">
         <div class="status-dot-anim"></div>
         <span class="status-text">Monitoring active</span>
       </div>
@@ -323,17 +269,6 @@
             <div class="toggle-desc">Popup when data detected</div>
           </div>
           <label class="toggle"><input type="checkbox" id="toggle-alerts" checked><span class="toggle-slider"></span></label>
-        </div>
-      </div>
-      <div class="settings-group">
-        <div class="settings-title">Data types</div>
-        <div class="data-grid">
-          <div class="data-chip"><span class="data-chip-label">IBAN</span><label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="IBAN" checked><span class="toggle-slider"></span></label></div>
-          <div class="data-chip"><span class="data-chip-label">Credit card</span><label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="CREDIT_CARD" checked><span class="toggle-slider"></span></label></div>
-          <div class="data-chip"><span class="data-chip-label">Email</span><label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="EMAIL" checked><span class="toggle-slider"></span></label></div>
-          <div class="data-chip"><span class="data-chip-label">NIF / CPF</span><label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="NIF" checked><span class="toggle-slider"></span></label></div>
-          <div class="data-chip"><span class="data-chip-label">Phone</span><label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="PHONE" checked><span class="toggle-slider"></span></label></div>
-          <div class="data-chip"><span class="data-chip-label">API Keys</span><label class="toggle" style="width:28px;height:16px"><input type="checkbox" class="data-toggle" data-type="API_KEY" checked><span class="toggle-slider"></span></label></div>
         </div>
       </div>
     </div>
