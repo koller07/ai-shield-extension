@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AI Shield - Compliance Auditor",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Real-time data protection for AI platforms — GDPR & EU AI Act compliant.",
   "permissions": [
     "storage",
