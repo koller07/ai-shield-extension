@@ -1,12 +1,10 @@
 {
   "manifest_version": 3,
   "name": "AI Shield - Compliance Auditor",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Real-time data protection for AI platforms — GDPR & EU AI Act compliant.",
   "permissions": [
-    "storage",
-    "tabs",
-    "activeTab"
+    "storage"
   ],
   "host_permissions": [
     "https://chatgpt.com/*",
@@ -18,7 +16,6 @@
     "https://chat.mistral.ai/*",
     "https://huggingface.co/*",
     "https://groq.com/*",
-    "https://www.anthropic.com/*",
     "https://ai-shield-backend-production.up.railway.app/*"
   ],
   "action": {
@@ -42,8 +39,7 @@
         "https://www.perplexity.ai/*",
         "https://chat.mistral.ai/*",
         "https://huggingface.co/*",
-        "https://groq.com/*",
-        "https://www.anthropic.com/*"
+        "https://groq.com/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
