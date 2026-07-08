@@ -6,7 +6,6 @@
   <title>AI Shield</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       width: 320px;
       min-height: 460px;
@@ -15,7 +14,6 @@
       color: #fff;
       -webkit-font-smoothing: antialiased;
     }
-
     /* ── HEADER ── */
     .header {
       background: #0D1117;
@@ -32,12 +30,10 @@
       background: #059669; flex-shrink: 0; box-shadow: 0 0 0 2px rgba(5,150,105,.25);
     }
     .header-dot.off { background: #374151; box-shadow: none; }
-
     /* ── SECTIONS ── */
     .section { display: none; }
     .section.active { display: block; }
     .content { padding: 16px; }
-
     /* ── INTRO TEXT ── */
     .intro-title {
       font-size: 14px; font-weight: 600; color: white; margin-bottom: 4px;
@@ -45,7 +41,6 @@
     .intro-sub {
       font-size: 12px; color: rgba(255,255,255,.5); margin-bottom: 18px; line-height: 1.5;
     }
-
     /* ── ERROR ── */
     .error-msg {
       display: none; background: rgba(217,45,32,.1);
@@ -54,7 +49,6 @@
       margin-bottom: 12px; line-height: 1.45;
     }
     .error-msg.show { display: block; }
-
     /* ── FORMS ── */
     .form-group { margin-bottom: 11px; }
     .form-group label {
@@ -78,7 +72,6 @@
       font-size: 10.5px; color: rgba(255,255,255,.35);
       text-align: center; margin-top: -4px; margin-bottom: 11px;
     }
-
     /* ── BUTTONS ── */
     .btn {
       width: 100%; padding: 10px 14px; border-radius: 8px; font-size: 13px;
@@ -95,7 +88,6 @@
       width: 100%; cursor: pointer; font-family: inherit; border-radius: 8px;
     }
     .btn-ghost-red:hover { background: rgba(217,45,32,.08); }
-
     /* ── TABS (after login) ── */
     .tab-bar { display: flex; border-bottom: 1px solid rgba(255,255,255,.08); }
     .tab {
@@ -108,7 +100,6 @@
     .tab:hover:not(.active) { color: rgba(255,255,255,.7); }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
-
     /* ── STATS ── */
     .stat-big {
       background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
@@ -116,7 +107,6 @@
     }
     .stat-big-num { font-size: 40px; font-weight: 800; color: #60A5FA; line-height: 1; }
     .stat-big-label { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 5px; }
-
     .user-card {
       background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
       border-radius: 9px; padding: 11px; margin-bottom: 12px;
@@ -130,7 +120,6 @@
     }
     .user-key { color: rgba(255,255,255,.4); }
     .user-val { color: white; font-weight: 500; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
-
     /* ── STATUS ── */
     .status-bar {
       display: flex; align-items: center; gap: 8px; padding: 8px 11px;
@@ -143,7 +132,6 @@
     }
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
     .status-text { font-size: 12px; color: #6EE7B7; font-weight: 500; }
-
     /* ── SETTINGS ── */
     .settings-title {
       font-size: 10px; font-weight: 600; color: rgba(255,255,255,.4);
@@ -172,7 +160,6 @@
   </style>
 </head>
 <body>
-
   <!-- HEADER -->
   <div class="header">
     <div class="header-logo">
@@ -184,20 +171,12 @@
     </div>
     <div class="header-dot off" id="headerDot"></div>
   </div>
-
   <!-- ══ AUTH SECTION (single form) ══ -->
   <div class="section active" id="authSection">
     <div class="content">
-
       <div class="intro-title">Activate your protection</div>
-      <div class="intro-sub">Enter your details and the company code from your manager.</div>
-
+      <div class="intro-sub">Enter your email and the company code from your manager.</div>
       <div class="error-msg" id="errorMsg"></div>
-
-      <div class="form-group">
-        <label>Your name</label>
-        <input type="text" id="authName" placeholder="John Doe" autocomplete="name">
-      </div>
       <div class="form-group">
         <label>Email</label>
         <input type="email" id="authEmail" placeholder="you@company.com" autocomplete="email">
@@ -211,27 +190,21 @@
         <input type="text" id="authCode" class="code-input" placeholder="AB12CD34" autocomplete="off" maxlength="8">
       </div>
       <div class="code-hint">Ask your manager for the company code</div>
-
       <button class="btn btn-primary" id="authBtn">Activate protection</button>
-
     </div>
   </div>
-
   <!-- ══ MAIN SECTION (after auth) ══ -->
   <div class="section" id="mainSection">
     <div class="tab-bar">
       <button class="tab active" data-tab="overview">Overview</button>
       <button class="tab" data-tab="settings">Settings</button>
     </div>
-
     <!-- Overview -->
     <div class="tab-panel active content" id="tab-overview">
-
       <div class="stat-big">
         <div class="stat-big-num" id="countToday">0</div>
         <div class="stat-big-label">Data leaks detected today</div>
       </div>
-
       <div class="user-card">
         <div class="user-row">
           <span class="user-key">Signed in as</span>
@@ -242,16 +215,12 @@
           <span class="user-val" id="companyName">—</span>
         </div>
       </div>
-
       <button class="btn-ghost-red" id="logoutBtn">Sign out</button>
-
       <div class="status-bar">
         <div class="status-dot-anim"></div>
         <span class="status-text">Monitoring active</span>
       </div>
-
     </div>
-
     <!-- Settings -->
     <div class="tab-panel content" id="tab-settings">
       <div class="settings-group">
@@ -272,9 +241,7 @@
         </div>
       </div>
     </div>
-
   </div>
-
   <script src="popup.js"></script>
 </body>
 </html>
