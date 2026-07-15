@@ -1,10 +1,11 @@
 // ============================================================
-// AI Shield — Content Script v1.1.0
+// AI Shield — Content Script v1.1.1
 // Text-field monitoring + FILE UPLOAD coverage (PDF, CSV, XLSX)
 //
 // NEW IN v1.1.0:
 // • File upload scanning: PDF (pdf.js), CSV, XLSX (SheetJS) — all local
 // • Expanded detection: UK/EU structured IDs + anchored contextual data
+// • Refined accuracy: Luhn (cards), IBAN checksum, code-context awareness, stricter phone
 // • Same audit-trail flow (detected/removed/sent_anyway/ignored/abandoned)
 //
 // PRIVACY: file content is parsed 100% locally in the browser.
@@ -45,7 +46,7 @@ const PATTERNS = {
   SSN: /\b(?!000|666|9\d{2})\d{3}-(?!00)\d{2}-(?!0000)\d{4}\b/g,
   // ── Contact ──
   EMAIL: /\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b/g,
-  PHONE: /(?:(?:\+|00)\d{1,3}[\s\-]?\d{1,4}[\s\-]?\d{2,4}[\s\-]?\d{2,4}[\s\-]?\d{0,4})|\b\d{2,4}[\s\-]\d{3,4}[\s\-]\d{3,4}\b/g,
+  PHONE: /(?:(?:\+|00)[\s\-.]?\d{1,3}[\s\-.]?(?:\(?\d{1,4}\)?[\s\-.]?){2,5}\d{2,4})|(?:(?:tel|phone|telefone|telemóvel|telemovel|mobile|mob|call|contact|whatsapp|telefono)[\s:.]*\+?\d[\d\s\-.()]{6,}\d)|(?:\(\d{2,4}\)[\s\-.]?\d{3,4}[\s\-.]?\d{3,4})/gi,
   // ── Tech Secrets ──
   API_KEY: /\b(?:sk-(?:ant-)?[\w]{20,}|sk_(?:test|live|proj)_[\w]{20,}|pk_(?:test|live)_[\w]{20,}|AIza[\w\-]{35}|ghp_[\w]{36}|gho_[\w]{36}|github_pat_[\w]{82}|xoxb-\d{11,}-\d{11,}-[\w]{24}|AKIA[A-Z0-9]{16})\b/g,
   PASSWORD: /\b(?:password|senha|pwd|pass|passwd)\s*[:=]\s*\S{4,}/gi,
@@ -105,21 +106,64 @@ function detectPlatform() {
   return 'unknown';
 }
 
+// ─── Validators (reduce false positives) ──
+// Luhn algorithm — every real credit card satisfies it
+function luhnValid(num) {
+  const digits = num.replace(/[\s\-]/g, '');
+  if (!/^\d{13,19}$/.test(digits)) return false;
+  let sum = 0, alt = false;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let d = parseInt(digits[i], 10);
+    if (alt) { d *= 2; if (d > 9) d -= 9; }
+    sum += d; alt = !alt;
+  }
+  return sum % 10 === 0;
+}
+// IBAN checksum (ISO 7064, mod-97)
+function ibanValid(iban) {
+  const s = iban.replace(/\s/g, '').toUpperCase();
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(s)) return false;
+  const rearranged = s.slice(4) + s.slice(0, 4);
+  const expanded = rearranged.replace(/[A-Z]/g, c => (c.charCodeAt(0) - 55).toString());
+  let remainder = '';
+  for (const ch of expanded) remainder = (parseInt(remainder + ch, 10) % 97).toString();
+  return parseInt(remainder, 10) === 1;
+}
+// Heuristic: does this text look like source code?
+function looksLikeCode(text) {
+  const signals = [
+    /\bfunction\b/, /\bconst\b/, /\blet\b/, /\bvar\b/, /=>/, /\bimport\b/,
+    /\bclass\b/, /\bdef\b/, /\breturn\b/, /[{};]\s*$/m, /\b(if|for|while)\s*\(/,
+    /<\/?[a-z]+>/, /\bconsole\.(log|error)\b/, /\bpublic\s+(class|static)\b/
+  ];
+  let hits = 0;
+  for (const re of signals) { if (re.test(text)) { hits++; if (hits >= 2) return true; } }
+  return false;
+}
+// Types that generate noise inside code and should be suppressed there.
+// High-value secrets (API_KEY, PASSWORD) are ALWAYS kept, even in code.
+const NOISY_IN_CODE = new Set(['PHONE', 'CREDIT_CARD', 'IBAN', 'SSN', 'UK_NI_NUMBER']);
+
 // ─── Detect on text ──
 function detect(text) {
   if (!text || text.length < MIN_LENGTH) return [];
+  const isCode = looksLikeCode(text);
   const found = [];
   const seen = new Set();
   for (const [type, re] of Object.entries(PATTERNS)) {
     re.lastIndex = 0;
     const matches = text.match(re);
-    if (matches) {
-      matches.forEach(m => {
-        const trimmed = m.trim();
-        const key = `${type}:${trimmed}`;
-        if (!seen.has(key)) { seen.add(key); found.push({ type, value: trimmed }); }
-      });
-    }
+    if (!matches) continue;
+    matches.forEach(m => {
+      const trimmed = m.trim();
+      // ── Validation gates (skip false positives) ──
+      if (type === 'CREDIT_CARD' && !luhnValid(trimmed)) return;
+      if (type === 'IBAN' && !ibanValid(trimmed)) return;
+      // ── Code context: suppress noisy types, keep secrets ──
+      if (isCode && NOISY_IN_CODE.has(type)) return;
+      const key = `${type}:${trimmed}`;
+      if (!seen.has(key)) { seen.add(key); found.push({ type, value: trimmed }); }
+    });
   }
   return found;
 }
@@ -395,4 +439,4 @@ window.addEventListener('beforeunload', () => {
     });
   });
 });
-console.log('[AI Shield v1.1.0] Loaded on', detectPlatform(), '— text + file scanning (PDF/CSV/XLSX), expanded detection');
+console.log('[AI Shield v1.1.1] Loaded on', detectPlatform(), '— text + file scanning (PDF/CSV/XLSX), expanded detection');
