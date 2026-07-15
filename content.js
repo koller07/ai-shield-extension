@@ -1,5 +1,5 @@
 // ============================================================
-// AI Shield — Content Script v1.1.1
+// AI Shield — Content Script v1.1.2
 // Text-field monitoring + FILE UPLOAD coverage (PDF, CSV, XLSX)
 //
 // NEW IN v1.1.0:
@@ -41,14 +41,14 @@ const PATTERNS = {
     ')\\b', 'g'
   ),
   // ── UK National Insurance ──
-  UK_NI_NUMBER: /\b[A-CEGHJ-PR-TW-Z][A-CEGHJ-NPR-TW-Z][\s]?\d{2}[\s]?\d{2}[\s]?\d{2}[\s]?[A-D]\b/g,
+  UK_NI_NUMBER: /\b[A-Z]{2}[\s]?\d{2}[\s]?\d{2}[\s]?\d{2}[\s]?[A-D]\b/gi,
   // ── US SSN ──
   SSN: /\b(?!000|666|9\d{2})\d{3}-(?!00)\d{2}-(?!0000)\d{4}\b/g,
   // ── Contact ──
   EMAIL: /\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b/g,
   PHONE: /(?:(?:\+|00)[\s\-.]?\d{1,3}[\s\-.]?(?:\(?\d{1,4}\)?[\s\-.]?){2,5}\d{2,4})|(?:(?:tel|phone|telefone|telemóvel|telemovel|mobile|mob|call|contact|whatsapp|telefono)[\s:.]*\+?\d[\d\s\-.()]{6,}\d)|(?:\(\d{2,4}\)[\s\-.]?\d{3,4}[\s\-.]?\d{3,4})/gi,
   // ── Tech Secrets ──
-  API_KEY: /\b(?:sk-(?:ant-)?[\w]{20,}|sk_(?:test|live|proj)_[\w]{20,}|pk_(?:test|live)_[\w]{20,}|AIza[\w\-]{35}|ghp_[\w]{36}|gho_[\w]{36}|github_pat_[\w]{82}|xoxb-\d{11,}-\d{11,}-[\w]{24}|AKIA[A-Z0-9]{16})\b/g,
+  API_KEY: /\b(?:sk-(?:proj|svcacct|ant|None)?-?[A-Za-z0-9_\-]{20,}|sk_(?:test|live|proj)_[\w]{20,}|pk_(?:test|live)_[\w]{20,}|AIza[\w\-]{35}|ghp_[\w]{36}|gho_[\w]{36}|github_pat_[\w]{82}|xoxb-\d{11,}-\d{11,}-[\w]{24}|AKIA[A-Z0-9]{16})\b/g,
   PASSWORD: /\b(?:password|senha|pwd|pass|passwd)\s*[:=]\s*\S{4,}/gi,
 
   // ══ NEW v1.1.0 — Structured UK/EU (anchored where risk of FP) ══
@@ -439,4 +439,4 @@ window.addEventListener('beforeunload', () => {
     });
   });
 });
-console.log('[AI Shield v1.1.1] Loaded on', detectPlatform(), '— text + file scanning (PDF/CSV/XLSX), expanded detection');
+console.log('[AI Shield v1.1.2] Loaded on', detectPlatform(), '— text + file scanning (PDF/CSV/XLSX), expanded detection');
